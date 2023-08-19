@@ -12,9 +12,37 @@ let fetchFromStorage = {}
 //     });
 // }
 
+function createEmptyObjectAndSet(objectName) {
+    chrome.storage.sync.get([objectName], result => {
+        if (chrome.runtime.lastError) {
+          console.error(`Error retrieving "${objectName}":`, chrome.runtime.lastError);
+        } else {
+          const existingObject = result[objectName];
+          console.log(existingObject,"exisitng obj")
+          if (existingObject === undefined) {
+            const emptyObject = {};
+            chrome.storage.sync.set({ [objectName]: emptyObject }, () => {
+              if (chrome.runtime.lastError) {
+                console.error(`Error storing the empty object "${objectName}":`, chrome.runtime.lastError);
+              } else {
+                console.log(`Empty object "${objectName}" stored successfully`);
+              }
+            });
+          } else {
+            console.log(`Object "${objectName}" already exists`);
+          }
+        }
+      });
+  }
+  
+  // Call the function to create an empty object with a specific name
+//   createEmptyObjectAndSet('filterWords');
+
 function addKeyToFilterWords(word) {
     //this get only takes objects
     chrome.storage.sync.get(['filterWords'], result => {
+
+
         if (chrome.runtime.lastError) {
             console.error('Error retrieving filterWords:', chrome.runtime.lastError);
         } else {
@@ -35,7 +63,7 @@ function addKeyToFilterWords(word) {
 //im taking in a object and saving the name of that object
 function storeFilterWords(filterWords) {
     debugger
-    chrome.storage.sync.set({ filterWords: filterWords }, () => {
+    chrome.storage.sync.set({filterWords}, () => {
         if (chrome.runtime.lastError) {
             console.error('Error storing filterWords:', chrome.runtime.lastError);
         } else {
@@ -46,21 +74,25 @@ function storeFilterWords(filterWords) {
     retrieveFilterWords()
 }
 
-// addKeyToFilterWords("test3");
+// addKeyToFilterWords("billion");
+// addKeyToFilterWords("woke");
+// addKeyToFilterWords("china");
 
 
 
 function retrieveFilterWords(callback) {
-    chrome.storage.sync.get(['bad'], result => {
+    chrome.storage.sync.get(['filterWords'], result => {
         if (chrome.runtime.lastError) {
             console.error('Error retrieving filterWords:', chrome.runtime.lastError);
         } else {
             fetchFromStorage = result.filterWords;
             if (fetchFromStorage) {
-                console.log('Retrieved filterWords:', fetchFromStorage);
+                // console.log('Retrieved filterWords:', fetchFromStorage);
                 // callback(fetchFromStorage,"good"); // Call the provided callback with the retrieved data
             } else {
                 console.log('filterWords not found in storage');
+                chrome.storage.sync.set({ filterWords: filterWords })
+               
                 // callback(null); // Call the callback with null if data not found
             }
         }
@@ -101,6 +133,7 @@ function getItemsfromDOM() {
 
 
 function removeEle(titleArray) {
+    // console.log(fetchFromStorage,"this is fetchFromStorage")
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let title = titleArray[i][1].getAttribute("title").toLowerCase();
@@ -113,19 +146,22 @@ function removeEle(titleArray) {
 
 
 function shouldRemoveTitle(title, filterWords) {
+    
     const lowerCaseTitle = title.toLowerCase();
-    // console.log(lowerCaseTitle)
     return Object.keys(filterWords).some(word => lowerCaseTitle.includes(word));
 }
 
 async function removeEleBundle() {
     const titleArray = await getItemsfromDOM();
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     removeEle(titleArray);
 }
 
-function setupMutationObserver(tabId) {
+
+function setupMutationObserver() {
     observer = new MutationObserver(mutations => {
-        // Handle mutations here
+        retrieveFilterWords()
         removeEleBundle()
         console.log("New content appeared on the page:");
     });
@@ -165,22 +201,29 @@ function disconnectObserver() {
 
 
     if (!initialSetupCompleted) {
+        debugger
+        
         console.log("initialSetupCompleted")
-        setupMutationObserver(globalTabId);
+        setupMutationObserver();
         initialSetupCompleted = true;
         
     }
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+              if (message.action === "addKeyToFilterWords") {
+                // Call your content script function
+                const value = message.value
+                console.log("connection works")
+                console.log(message)
+                addKeyToFilterWords(value)
+                // Send a response bk if needed
+                sendResponse({ status: "success" });
+              }
+    })
 
 
 
 })()
 
 
-
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-//     if (changeInfo.status === "complete" && tab.url.includes("https://www.youtube.com/")) {
-//         // Tab has finished loading and is on YouTube
-//         setupMutationObserver(tabId);
-//     }
-// });
 

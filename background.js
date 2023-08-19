@@ -10,20 +10,3 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-
-// chrome.tabs.query({}, tabs => {
-//   console.log(tabs)
-//   for (const tab of tabs) {
-//       if (tab.active) {
-//           console.log(`Tab with URL ${tab.url} is active.`);
-//           chrome.tabs.sendMessage(tabId,{
-//             type: "run"
-//           })
-//       } else {
-//           console.log(`Tab with URL ${tab.url} is not active.`);
-//           chrome.tabs.sendMessage(tabId,{
-//             type: "run"
-//           })
-//       }
-//   }
-// });
