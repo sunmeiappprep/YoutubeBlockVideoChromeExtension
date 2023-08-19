@@ -46,7 +46,6 @@ function addKeyToFilterWords(word) {
         if (chrome.runtime.lastError) {
             console.error('Error retrieving filterWords:', chrome.runtime.lastError);
         } else {
-            debugger
             //result.filterWords will give me the object that has no name?
             localFetchFromStorage = result.filterWords;
             if (localFetchFromStorage) {
@@ -59,6 +58,29 @@ function addKeyToFilterWords(word) {
         }
     });
 }
+
+
+function removeKeyFromFilterWords(word) {
+    //this get only takes objects
+    chrome.storage.sync.get(['filterWords'], result => {
+
+
+        if (chrome.runtime.lastError) {
+            console.error('Error retrieving filterWords:', chrome.runtime.lastError);
+        } else {
+            //result.filterWords will give me the object that has no name?
+            localFetchFromStorage = result.filterWords;
+            if (localFetchFromStorage[word]) {
+                console.log(`removed ${localFetchFromStorage[word]}`)
+                delete(localFetchFromStorage[word])
+                storeFilterWords(localFetchFromStorage); // Store the modified object back
+            } else {
+                console.log('filterWords not found in storage');
+            }
+        }
+    });
+}
+
 
 //im taking in a object and saving the name of that object
 function storeFilterWords(filterWords) {
@@ -153,7 +175,6 @@ function shouldRemoveTitle(title, filterWords) {
 
 async function removeEleBundle() {
     const titleArray = await getItemsfromDOM();
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
     removeEle(titleArray);
 }
@@ -184,8 +205,8 @@ function disconnectObserver() {
 (() => {
     let globalTabId, localtabURL;
     let initialSetupCompleted = false;
-    chrome.runtime.onMessage.addListener((obj, sender, response) => {
-        const { type, tabId, tabURL } = obj;
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        const { type, tabId, tabURL,value } = message;
         localTabId = tabId
         localtabURL = tabURL
         if (type === "run") {
@@ -199,27 +220,49 @@ function disconnectObserver() {
     })
 
 
-
-    if (!initialSetupCompleted) {
-        debugger
-        
-        console.log("initialSetupCompleted")
-        setupMutationObserver();
-        initialSetupCompleted = true;
-        
-    }
+     if (!initialSetupCompleted) {
+        setTimeout(() => {
+            console.log("initialSetupCompleted");
+            setupMutationObserver();
+            initialSetupCompleted = true;
+        }, 2000); // 2000 milliseconds equals 2 seconds
+    }   
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            const value = message.value
+            console.log(message)
               if (message.action === "addKeyToFilterWords") {
                 // Call your content script function
-                const value = message.value
                 console.log("connection works")
                 console.log(message)
                 addKeyToFilterWords(value)
                 // Send a response bk if needed
                 sendResponse({ status: "success" });
               }
+              if (message.action === "getFilterWords"){
+                sendResponse({ filterWords: fetchFromStorage })
+              }
+            //   console.log(value,"deleteWordFromFilterList")
+            //   if (message.action === "deleteWordFromFilterList"){
+            //     removeKeyFromFilterWords(value)
+            //   }
+            //   else{
+            //     sendResponse({status: "no condintion is met"})
+            //   }
     })
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === "deleteWordFromFilterList") {
+          // Perform the deletion action here using message.value
+          removeKeyFromFilterWords(message.value)
+          // Respond to the message
+          sendResponse({ status: "success" });
+        }
+        else{
+            sendResponse({status: "no condintion is met"})
+        }
+      });
+      
 
 
 
