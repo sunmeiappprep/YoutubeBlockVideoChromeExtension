@@ -26,38 +26,38 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 });
 
-chrome.webNavigation.onHistoryStateUpdated.addListener(
-  function (details) {
-    const tabId = details.tabId;
-    // If the tab is marked as ready and the URL is not YouTube's homepage, disconnect the observer
-    if (readyTabs[tabId] && details.url !== "https://www.youtube.com/") {
-      chrome.tabs.sendMessage(tabId, { action: "disconnectObserver" });
-    }
-    else if (readyTabs[tabId] && details.url === "https://www.youtube.com/") { // Change this condition
-        chrome.tabs.sendMessage(tabId, { action: "run" });
-      }
-  },
-  { url: [{ hostEquals: "www.youtube.com" }] } // Filter to only receive events from YouTube
-);
+// chrome.webNavigation.onHistoryStateUpdated.addListener(
+//   function (details) {
+//     const tabId = details.tabId;
+//     // If the tab is marked as ready and the URL is not YouTube's homepage, disconnect the observer
+//     if (readyTabs[tabId] && details.url !== "https://www.youtube.com/") {
+//       chrome.tabs.sendMessage(tabId, { action: "disconnectObserver" });
+//     }
+//     else if (readyTabs[tabId] && details.url === "https://www.youtube.com/") { // Change this condition
+//         chrome.tabs.sendMessage(tabId, { action: "run" });
+//       }
+//   },
+//   { url: [{ hostEquals: "www.youtube.com" }] } // Filter to only receive events from YouTube
+// );
 
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // console.log(tabId, changeInfo, tab);
-  if (tab.url !== "https://www.youtube.com/") {
-    // Check if the tab is marked as ready
-    if (readyTabs[tabId]) {
-      chrome.tabs.sendMessage(tabId, { action: "disconnectObserver" });
-    } else {
-      // console.log("Tab is not ready");
-    }
-  }
-  else if (tab.url === "https://www.youtube.com/") {
-    // Check if the tab is marked as ready
-    if (readyTabs[tabId]) {
-      chrome.tabs.sendMessage(tabId, { action: "run" });
-    } else {
-      // console.log("Tab is not ready");
-    }
-  }
-});
+// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+//   // console.log(tabId, changeInfo, tab);
+//   if (tab.url !== "https://www.youtube.com/") {
+//     // Check if the tab is marked as ready
+//     if (readyTabs[tabId]) {
+//       chrome.tabs.sendMessage(tabId, { action: "disconnectObserver" });
+//     } else {
+//       // console.log("Tab is not ready");
+//     }
+//   }
+//   else if (tab.url === "https://www.youtube.com/") {
+//     // Check if the tab is marked as ready
+//     if (readyTabs[tabId]) {
+//       chrome.tabs.sendMessage(tabId, { action: "run" });
+//     } else {
+//       // console.log("Tab is not ready");
+//     }
+//   }
+// });
 

@@ -52,6 +52,7 @@ function addKeyToFilterWords(word) {
                 console.log(localFetchFromStorage)
                 localFetchFromStorage[word] = true;
                 storeFilterWords(localFetchFromStorage); // Store the modified object back
+                sendResponse({ status: 'success' });
             } else {
                 console.log('filterWords not found in storage');
             }
@@ -132,7 +133,7 @@ function isBottomReached() {
     const viewportHeight = window.innerHeight;
 
     // Check if the user has scrolled close to the bottom
-    return scrollY + viewportHeight >= pageHeight - pageHeight * .3; // Adjust the threshold as needed
+    return scrollY + viewportHeight >= pageHeight - pageHeight * .5; // Adjust the threshold as needed
 }
 
 function getItemsfromDOM() {
@@ -173,34 +174,13 @@ function shouldRemoveTitle(title, filterWords) {
 }
 
 async function removeEleBundle() {
+    console.log("removeEleBundle is running")
     const titleArray = await getItemsfromDOM();
-
     removeEle(titleArray);
 }
 
-
-function setupMutationObserver() {
-    // debugger
-    if(observer){
-        disconnectObserver(observer)
-    }
-    observer = new MutationObserver(mutations => {
-        removeEleBundle()
-        console.log("New content appeared on the page:");
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    // Optionally, you can disconnect the observer when needed
-    // observer.disconnect();
-}
-
-function disconnectObserver(observer) {
-    if (observer) {
-        observer.disconnect();
-        observer = null; // Reset the observer
-        console.log(observer);
-    }
+function getWindowURL() {
+    return window.location.href
 }
 
 
@@ -217,19 +197,7 @@ function disconnectObserver(observer) {
 
         localTabId = tabId
         localtabURL = tabURL
-        if (action === "run") {
-            // setupMutationObserver();
-            if (isBottomReached){
-                removeEleBundle()
-            }
-        }
-        else if (action === "disconnectObserver") {
-            // debugger
-            // if(observer){
-            //     disconnectObserver(observer)
-            // }
-        }
-        else if (action === "addKeyToFilterWords") {
+        if (action === "addKeyToFilterWords") {
             // Call your content script function
             console.log("connection works")
             console.log(message)
@@ -249,24 +217,53 @@ function disconnectObserver(observer) {
             else {
             sendResponse({ status: "no condintion is met" })
         }
-        // chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
-        //     console.log(request, sender, sendResponse);
-        //     sendResponse('我收到你的消息了：'+JSON.stringify("request"));
-        // });
     })
+    
+    setTimeout(() => {
+        removeEleBundle() 
+    }, 1000);
 
-    removeEleBundle()
-
-    function checkIfBottomReachedAndExecute() {
-        if (isBottomReached()) {
+    function checkIfBottomReachedAndExecuteScroll() {
+        if (isBottomReached() && (getWindowURL() === "https://www.youtube.com/")) {
             removeEleBundle();
-            // Optionally clear the interval if you want to stop checking
         }
     }
     
-    // Call checkIfBottomReachedAndExecute every 500 milliseconds (or whatever time interval you prefer)
-    const scrollCheckInterval = setInterval(checkIfBottomReachedAndExecute, 500);
+
     
+    function CheckIfBottomReachedAndExecuteKey(event) {
+        // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
+        if ((event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) && 
+            isBottomReached() && 
+            (getWindowURL() === "https://www.youtube.com/")) {
+            removeEleBundle();
+        }
+    }
+    
+    
+    function throttle(func, limit) {
+        let inThrottle;
+        return function() {
+          const context = this, args = arguments;
+          if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+          }
+        };
+      }
+      
+      const throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 1000);
+      const throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
+      
+      window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
+      window.addEventListener('scrkeydownoll', throttledCheckIfBottomReachedAndExecuteKey);
+      
+
+
+    // Call checkIfBottomReachedAndExecute every 500 milliseconds (or whatever time interval you prefer)
+    // setInterval(checkIfBottomReachedAndExecute, 500);
+
 
 
 
