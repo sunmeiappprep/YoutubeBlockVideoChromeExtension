@@ -1,7 +1,7 @@
-
+chrome.runtime.sendMessage({ status: "ready" });
 
 let fetchFromStorage = {}
-
+let observer
 // function storeFilterWords(updatedFilterWords) {
 //     chrome.storage.sync.set({ filterWords: updatedFilterWords }, () => {
 //         if (chrome.runtime.lastError) {
@@ -15,27 +15,27 @@ let fetchFromStorage = {}
 function createEmptyObjectAndSet(objectName) {
     chrome.storage.sync.get([objectName], result => {
         if (chrome.runtime.lastError) {
-          console.error(`Error retrieving "${objectName}":`, chrome.runtime.lastError);
+            console.error(`Error retrieving "${objectName}":`, chrome.runtime.lastError);
         } else {
-          const existingObject = result[objectName];
-          console.log(existingObject,"exisitng obj")
-          if (existingObject === undefined) {
-            const emptyObject = {};
-            chrome.storage.sync.set({ [objectName]: emptyObject }, () => {
-              if (chrome.runtime.lastError) {
-                console.error(`Error storing the empty object "${objectName}":`, chrome.runtime.lastError);
-              } else {
-                console.log(`Empty object "${objectName}" stored successfully`);
-              }
-            });
-          } else {
-            console.log(`Object "${objectName}" already exists`);
-          }
+            const existingObject = result[objectName];
+            console.log(existingObject, "exisitng obj")
+            if (existingObject === undefined) {
+                const emptyObject = {};
+                chrome.storage.sync.set({ [objectName]: emptyObject }, () => {
+                    if (chrome.runtime.lastError) {
+                        console.error(`Error storing the empty object "${objectName}":`, chrome.runtime.lastError);
+                    } else {
+                        console.log(`Empty object "${objectName}" stored successfully`);
+                    }
+                });
+            } else {
+                console.log(`Object "${objectName}" already exists`);
+            }
         }
-      });
-  }
-  
-  // Call the function to create an empty object with a specific name
+    });
+}
+
+// Call the function to create an empty object with a specific name
 //   createEmptyObjectAndSet('filterWords');
 
 function addKeyToFilterWords(word) {
@@ -72,7 +72,7 @@ function removeKeyFromFilterWords(word) {
             localFetchFromStorage = result.filterWords;
             if (localFetchFromStorage[word]) {
                 console.log(`removed ${localFetchFromStorage[word]}`)
-                delete(localFetchFromStorage[word])
+                delete (localFetchFromStorage[word])
                 storeFilterWords(localFetchFromStorage); // Store the modified object back
             } else {
                 console.log('filterWords not found in storage');
@@ -84,14 +84,14 @@ function removeKeyFromFilterWords(word) {
 
 //im taking in a object and saving the name of that object
 function storeFilterWords(filterWords) {
-    debugger
-    chrome.storage.sync.set({filterWords}, () => {
+    // debugger
+    chrome.storage.sync.set({ filterWords }, () => {
         if (chrome.runtime.lastError) {
             console.error('Error storing filterWords:', chrome.runtime.lastError);
         } else {
             console.log('filterWords stored successfully');
         }
-        
+
     });
     retrieveFilterWords()
 }
@@ -114,7 +114,7 @@ function retrieveFilterWords(callback) {
             } else {
                 console.log('filterWords not found in storage');
                 chrome.storage.sync.set({ filterWords: filterWords })
-               
+
                 // callback(null); // Call the callback with null if data not found
             }
         }
@@ -122,13 +122,7 @@ function retrieveFilterWords(callback) {
 }
 retrieveFilterWords()
 
-// chrome.storage.sync.get("filterWords", (result) => {
-//     const storedFilterWords = JSON.parse(result.filterWords);
-//     console.log("Stored filter words:", storedFilterWords);
-// });
 
-
-let observer
 function isBottomReached() {
     // Calculate how far the user has scrolled down
     const scrollY = window.scrollY;
@@ -158,17 +152,22 @@ function removeEle(titleArray) {
     // console.log(fetchFromStorage,"this is fetchFromStorage")
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
-        let title = titleArray[i][1].getAttribute("title").toLowerCase();
-
-        if (shouldRemoveTitle(title, fetchFromStorage)) {
-            ele.remove();
+        let titleLink = titleArray[i][1];
+        if (titleLink){
+            let title = titleArray[i][1].getAttribute("title").toLowerCase();
+        
+            if (shouldRemoveTitle(title, fetchFromStorage)) {
+                ele.classList.add('hidden');
+                // ele.remove();
+            }
         }
+
     }
 }
 
 
 function shouldRemoveTitle(title, filterWords) {
-    
+
     const lowerCaseTitle = title.toLowerCase();
     return Object.keys(filterWords).some(word => lowerCaseTitle.includes(word));
 }
@@ -181,8 +180,11 @@ async function removeEleBundle() {
 
 
 function setupMutationObserver() {
+    // debugger
+    if(observer){
+        disconnectObserver(observer)
+    }
     observer = new MutationObserver(mutations => {
-        retrieveFilterWords()
         removeEleBundle()
         console.log("New content appeared on the page:");
     });
@@ -193,80 +195,85 @@ function setupMutationObserver() {
     // observer.disconnect();
 }
 
-function disconnectObserver() {
+function disconnectObserver(observer) {
     if (observer) {
         observer.disconnect();
         observer = null; // Reset the observer
-        console.log("Observer disconnected");
+        console.log(observer);
     }
 }
+
 
 
 (() => {
     let globalTabId, localtabURL;
     let initialSetupCompleted = false;
+    // debugger
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        const { type, tabId, tabURL,value } = message;
+        
+        // console.log(message);
+        const { type, tabId, tabURL, value, action } = message;
+        console.log(action);
+
         localTabId = tabId
         localtabURL = tabURL
-        if (type === "run") {
-            setupMutationObserver(tabId);
-            initialSetupCompleted = true;
-            console.log(window.location.href);
+        if (action === "run") {
+            // setupMutationObserver();
+            if (isBottomReached){
+                removeEleBundle()
+            }
         }
-        if (type === "disconnectObserver") {
-            disconnectObserver()
+        else if (action === "disconnectObserver") {
+            // debugger
+            // if(observer){
+            //     disconnectObserver(observer)
+            // }
         }
-    })
-
-
-     if (!initialSetupCompleted) {
-        setTimeout(() => {
-            console.log("initialSetupCompleted");
-            setupMutationObserver();
-            initialSetupCompleted = true;
-        }, 2000); // 2000 milliseconds equals 2 seconds
-    }   
-
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            const value = message.value
+        else if (action === "addKeyToFilterWords") {
+            // Call your content script function
+            console.log("connection works")
             console.log(message)
-              if (message.action === "addKeyToFilterWords") {
-                // Call your content script function
-                console.log("connection works")
-                console.log(message)
-                addKeyToFilterWords(value)
-                // Send a response bk if needed
-                sendResponse({ status: "success" });
-              }
-              if (message.action === "getFilterWords"){
-                sendResponse({ filterWords: fetchFromStorage })
-              }
-            //   console.log(value,"deleteWordFromFilterList")
-            //   if (message.action === "deleteWordFromFilterList"){
-            //     removeKeyFromFilterWords(value)
-            //   }
-            //   else{
-            //     sendResponse({status: "no condintion is met"})
-            //   }
+            addKeyToFilterWords(value)
+            // Send a response bk if needed
+            sendResponse({ status: "success" });
+        }
+        else if (action === "getFilterWords") {
+            sendResponse({ filterWords: fetchFromStorage })
+        }
+        else if (action === "deleteWordFromFilterList") {
+            console.log(message.value, message, value)
+            removeKeyFromFilterWords(message.value)
+            // Respond to the message
+            sendResponse({ status: "success" });
+        }
+            else {
+            sendResponse({ status: "no condintion is met" })
+        }
+        // chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
+        //     console.log(request, sender, sendResponse);
+        //     sendResponse('我收到你的消息了：'+JSON.stringify("request"));
+        // });
     })
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === "deleteWordFromFilterList") {
-          // Perform the deletion action here using message.value
-          removeKeyFromFilterWords(message.value)
-          // Respond to the message
-          sendResponse({ status: "success" });
+    removeEleBundle()
+
+    function checkIfBottomReachedAndExecute() {
+        if (isBottomReached()) {
+            removeEleBundle();
+            // Optionally clear the interval if you want to stop checking
         }
-        else{
-            sendResponse({status: "no condintion is met"})
-        }
-      });
-      
+    }
+    
+    // Call checkIfBottomReachedAndExecute every 500 milliseconds (or whatever time interval you prefer)
+    const scrollCheckInterval = setInterval(checkIfBottomReachedAndExecute, 500);
+    
 
 
 
 })()
+
+    
+
 
 
 

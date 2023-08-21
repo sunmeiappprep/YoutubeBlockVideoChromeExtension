@@ -83,11 +83,14 @@ function displayObjectAsList(obj) {
   }
 
   function sendRemoveMessage(key){
-    chrome.runtime.sendMessage({ action: "deleteWordFromFilterList", value: key }, response => {
-        // Handle response if needed
+    console.log("I am in sendREmove",key);
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "deleteWordFromFilterList", value: key }, (response) => {
         console.log(response.status);
       });
+    });
   }
+  
   
   
 
