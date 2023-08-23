@@ -1,7 +1,6 @@
 chrome.runtime.sendMessage({ status: "ready" });
 console.log("CS is running")
 let fetchFromStorage = {}
-let observer
 // function storeFilterWords(updatedFilterWords) {
 //     chrome.storage.sync.set({ filterWords: updatedFilterWords }, () => {
 //         if (chrome.runtime.lastError) {
@@ -12,10 +11,20 @@ let observer
 //     });
 // }
 
-function renderAllList () {
-    
+
+function createList(value) {
+    console.log("this is CS createList")
+    console.log(value)
+
+    chrome.storage.sync.set({ [value]: {} }, () => {
+        if (chrome.runtime.lastError) {
+            console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+        } else {
+            console.log(`Empty object "${value}" stored successfully`);
+        }
+    });
 }
-  
+
 
 function createEmptyObjectAndSet(objectName) {
     chrome.storage.sync.get([objectName], result => {
@@ -40,18 +49,16 @@ function createEmptyObjectAndSet(objectName) {
     });
 }
 
-function importJSON(json){
+function importJSON(json) {
     chrome.storage.sync.set({ filterWords: json }, () => {
         if (chrome.runtime.lastError) {
-            console.error(`Error storing the empty object "${filterWords}":`, chrome.runtime.lastError);
+            console.error(`Error storing the empty object "${test}":`, chrome.runtime.lastError);
         } else {
-            console.log(`Empty object "${filterWords}" stored successfully`);
+            console.log(`Empty object "${test}" stored successfully`);
         }
     });
 }
 
-// Call the function to create an empty object with a specific name
-//   createEmptyObjectAndSet('filterWords');
 
 function addKeyToFilterWords(word) {
     //this get only takes objects
@@ -210,6 +217,12 @@ function handleMessage(message, sender, sendResponse) {
             addKeyToFilterWords(value);
             sendResponse({ status: "success" });
             break;
+        case "retrieveLists":
+            case "retrieveLists":
+                retrieveListsFromStorage().then(list => {
+                  sendResponse({ status: "success", list: list });
+                });
+            return true; // This keeps the message channel open for the asynchronous response
         case "getFilterWords":
             sendResponse({ filterWords: fetchFromStorage });
             break;
@@ -219,6 +232,10 @@ function handleMessage(message, sender, sendResponse) {
             break;
         case "setupSubmitButton":
             sendResponse({ status: getWindowURL() });
+            break;
+        case "createList":
+            createList(value)
+            sendResponse({ status: "success" });
             break;
         case "importJSON":
             debugger
@@ -254,10 +271,19 @@ function checkIfBottomReachedAndExecuteScroll() {
 }
 
 
+function retrieveListsFromStorage() {
+    return new Promise((resolve) => {
+      chrome.storage.sync.get(null, results => {
+        console.log(results, "renderAllList ()");
+        const listKeysArray = Object.keys(results);
+        resolve(listKeysArray);
+      });
+    });
+  }
 
 function CheckIfBottomReachedAndExecuteKey(event) {
     // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
-    if ((event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) && 
+    if ((event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) &&
         isBottomReached()) {
         removeEleBundle();
     }
@@ -268,21 +294,21 @@ const throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReac
 const throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
 
 
-
 (() => {
     chrome.runtime.onMessage.addListener(handleMessage);
-  
+
+
     // Event Listeners
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
     window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
-  
+
     // Timeout to remove elements
     setTimeout(() => {
-      removeEleBundle();
+        removeEleBundle();
     }, 1000);
-  
-  })()
-  
+
+})()
+
 
 
 

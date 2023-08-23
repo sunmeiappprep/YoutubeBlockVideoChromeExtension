@@ -3,7 +3,7 @@
   color: #1479a1;
   background-color: #e6f0ff; /* Change this to your desired blueish color */
   padding: 20px;
-
+  height: 1000px;
 }
 
 .title {
@@ -26,4 +26,27 @@
 
 .hidden {
   display: none;
+}
+
+select {
+  width: 100%; /* Full width */
+  padding: 10px; /* Padding for appearance */
+  margin: 8px 0; /* Margin to separate from other elements */
+  box-sizing: border-box; /* Include padding and border in width */
+  border: 1px solid #ccc; /* Border color */
+  border-radius: 4px; /* Rounded corners */
+  appearance: none; /* Remove default appearance */
+  font-size: 16px; /* Font size */
+}
+
+option {
+  padding: 8px; /* Padding for each option */
+  font-size: 14px; /* Font size for options */
+  color: #333; /* Text color for options */
+}
+
+/* Style for the focused or active state of the select */
+select:focus {
+  border-color: #66afe9; /* Border color when focused */
+  outline: none; /* Remove default outline */
 }
