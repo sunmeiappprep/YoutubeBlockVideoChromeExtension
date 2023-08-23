@@ -13,6 +13,7 @@ let observer
 // }
 
 
+  
 
 function createEmptyObjectAndSet(objectName) {
     chrome.storage.sync.get([objectName], result => {
@@ -33,6 +34,16 @@ function createEmptyObjectAndSet(objectName) {
             } else {
                 console.log(`Object "${objectName}" already exists`);
             }
+        }
+    });
+}
+
+function importJSON(json){
+    chrome.storage.sync.set({ filterWords: json }, () => {
+        if (chrome.runtime.lastError) {
+            console.error(`Error storing the empty object "${filterWords}":`, chrome.runtime.lastError);
+        } else {
+            console.log(`Empty object "${filterWords}" stored successfully`);
         }
     });
 }
@@ -191,7 +202,7 @@ function getWindowURL() {
 
 function handleMessage(message, sender, sendResponse) {
     const { type, tabId, tabURL, value, action } = message;
-
+    console.log(message, sender, sendResponse)
     switch (action) {
         case "addKeyToFilterWords":
             addKeyToFilterWords(value);
@@ -206,6 +217,12 @@ function handleMessage(message, sender, sendResponse) {
             break;
         case "setupSubmitButton":
             sendResponse({ status: getWindowURL() });
+            break;
+        case "importJSON":
+            debugger
+            importJSON(value)
+            console.log(value)
+            sendResponse({ status: "success" });
             break;
         case "run":
             // Your logic here

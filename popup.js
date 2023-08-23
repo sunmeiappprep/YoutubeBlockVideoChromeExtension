@@ -119,11 +119,11 @@ function exportWords() {
     const activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, { action: "getFilterWords" }, (response) => {
       if (response && response.filterWords) {
-        // Getting all the keys from the object and joining them with a newline
-        const words = Object.keys(response.filterWords).join('\n');
+        // Stringifying the object to turn it into a JSON string
+        const jsonStr = JSON.stringify(response.filterWords, null, 2); // Indented with 2 spaces
 
-        // Creating a blob with the words and setting its MIME type as text/plain
-        const blob = new Blob([words], { type: 'text/plain' });
+        // Creating a blob with the JSON string and setting its MIME type as application/json
+        const blob = new Blob([jsonStr], { type: 'application/json' });
 
         // Creating an object URL for the blob
         const url = URL.createObjectURL(blob);
@@ -131,7 +131,7 @@ function exportWords() {
         // Creating an anchor element to trigger the download
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'words.txt'; // The filename for the download
+        a.download = 'words.json'; // The filename for the download
         a.style.display = 'none';
 
         document.body.appendChild(a);
@@ -145,9 +145,43 @@ function exportWords() {
   });
 }
 
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        // Parse the JSON content
+        const data = JSON.parse(e.target.result);
+        // Now you can use the data object as you need
+        // For example, you might call a function to process the imported data:
+        processImportedData(data);
+      } catch (err) {
+        console.error('Error parsing JSON:', err);
+      }
+    };
+    reader.readAsText(file);
+  }
+}
+
+function processImportedData(value) {
+  // console.log("data run")
+  // console.log(data)
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    const activeTab = tabs[0];
+
+    // Send a message to the content script in the active tab
+    chrome.tabs.sendMessage(activeTab.id, { action: "importJSON", value: value });
+  });
+}
+
+
 const exportWordsButton = document.getElementById("exportWords");
 exportWordsButton.addEventListener("click", exportWords);
 
 const refreshButton = document.getElementById("refreshButton");
 refreshButton.addEventListener("click", refreshYoutube);
+
+
+document.getElementById('importFile').addEventListener('change', handleFileSelect);
 
