@@ -114,6 +114,40 @@ function refreshYoutube () {
   chrome.tabs.reload(currentTab.id);
 }
 
+function exportWords() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    chrome.tabs.sendMessage(activeTab.id, { action: "getFilterWords" }, (response) => {
+      if (response && response.filterWords) {
+        // Getting all the keys from the object and joining them with a newline
+        const words = Object.keys(response.filterWords).join('\n');
+
+        // Creating a blob with the words and setting its MIME type as text/plain
+        const blob = new Blob([words], { type: 'text/plain' });
+
+        // Creating an object URL for the blob
+        const url = URL.createObjectURL(blob);
+
+        // Creating an anchor element to trigger the download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'words.txt'; // The filename for the download
+        a.style.display = 'none';
+
+        document.body.appendChild(a);
+        a.click(); // This will start the download
+
+        // Cleanup: Revoke the object URL and remove the anchor element
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    });
+  });
+}
+
+const exportWordsButton = document.getElementById("exportWords");
+exportWordsButton.addEventListener("click", exportWords);
+
 const refreshButton = document.getElementById("refreshButton");
 refreshButton.addEventListener("click", refreshYoutube);
 
