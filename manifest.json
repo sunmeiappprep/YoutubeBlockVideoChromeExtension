@@ -7,22 +7,11 @@
       "service_worker": "background.js"
     },
     "content_scripts": [
-      {
-        "matches": ["*://*.youtube.com/watch?v=*"],
-        "js": ["contentScript.js"]
-      }
-    ],
-    "web_accessible_resources": [
-      {
-        "resources": [
-          "assets/bookmark.png",
-          "assets/play.png",
-          "assets/delete.png",
-          "assets/save.png"
-        ],
-        "matches": ["*://*.youtube.com/watch?v=*"]
-      }
-    ],
+        {
+          "matches": ["*://www.youtube.com/"],
+          "js": ["contentScript.js"]
+        }
+      ],
     "action": {
       "default_icon": {
         "16": "assets/ext-icon.png",

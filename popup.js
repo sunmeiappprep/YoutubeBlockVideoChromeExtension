@@ -1,19 +1,4 @@
 console.log("popup.js is running")
-var currentTabUrl
-var currentTab
-chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-  currentTab = tabs[0]; // There should only be one in this list
-  currentTabUrl = currentTab.url;
-
-  if (currentTabUrl && currentTabUrl.includes('youtube.com')) {
-    console.log("Current tab is a YouTube page:", currentTabUrl);
-    setupSubmitButton();
-    fetchAndDisplayFilterWords();
-  } else {
-    console.log("Current tab is not a YouTube page:", currentTabUrl);
-  }
-});
-
 
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
@@ -98,6 +83,19 @@ function displayObjectAsList(obj) {
   container.appendChild(ul);
 }
 
+function displayFilterLists(listKeysArray) {
+  const dropdown = document.getElementById("dynamicDropdown");
+        
+  // Loop through the options and add them to the dropdown
+  listKeysArray.forEach((optionText, index) => {
+    const option = document.createElement("option");
+    option.value = "option" + (index + 1); // or whatever value you want to associate with this option
+    option.text = optionText;
+    dropdown.add(option);
+  })
+}
+
+
 function sendRemoveMessage(key) {
   console.log("I am in sendREmove", key);
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -175,13 +173,59 @@ function processImportedData(value) {
   });
 }
 
+function createList(){
+  const filterListNameInput = document.getElementById("filterListNameInput");
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    const activeTab = tabs[0];
+    let value = filterListNameInput.value
+    
+    // Send a message to the content script in the active tab
+    chrome.tabs.sendMessage(activeTab.id, { action: "createList", value: value });
+  });
+}
 
-const exportWordsButton = document.getElementById("exportWords");
-exportWordsButton.addEventListener("click", exportWords);
+function retrieveLists(){
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    chrome.tabs.sendMessage(activeTab.id, { action: "retrieveLists" }, (response) => {
+      // Use the response to update your list
+      console.log(response,this)
+      
+      if (response && response.list) {
+        displayFilterLists(response.list)
+      }
+    });
+  });
+}
+retrieveLists()
+function initializePopup() {
+  const createFilterListNameButton = document.getElementById("createFilterListNameButton");
+  createFilterListNameButton.addEventListener("click", createList);
 
-const refreshButton = document.getElementById("refreshButton");
-refreshButton.addEventListener("click", refreshYoutube);
+  const exportWordsButton = document.getElementById("exportWords");
+  exportWordsButton.addEventListener("click", exportWords);
 
+  const refreshButton = document.getElementById("refreshButton");
+  refreshButton.addEventListener("click", refreshYoutube);
 
-document.getElementById('importFile').addEventListener('change', handleFileSelect);
+  document.getElementById('importFile').addEventListener('change', handleFileSelect);
 
+  console.log("popup.js is running");
+  var currentTabUrl;
+  var currentTab;
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    currentTab = tabs[0]; // There should only be one in this list
+    currentTabUrl = currentTab.url;
+
+    if (currentTabUrl && currentTabUrl.includes('youtube.com')) {
+      console.log("Current tab is a YouTube page:", currentTabUrl);
+      setupSubmitButton();
+      fetchAndDisplayFilterWords();
+    } else {
+      console.log("Current tab is not a YouTube page:", currentTabUrl);
+    }
+  });
+}
+
+// Call the function to execute everything inside it
+initializePopup();
