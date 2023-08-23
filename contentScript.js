@@ -12,7 +12,9 @@ let observer
 //     });
 // }
 
-
+function renderAllList () {
+    
+}
   
 
 function createEmptyObjectAndSet(objectName) {
