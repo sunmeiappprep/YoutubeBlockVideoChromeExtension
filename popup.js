@@ -1,4 +1,19 @@
-// adding a new bookmark row to the popup
+console.log("popup.js is running")
+var currentTabUrl
+var currentTab
+chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+  currentTab = tabs[0]; // There should only be one in this list
+  currentTabUrl = currentTab.url;
+
+  if (currentTabUrl && currentTabUrl.includes('youtube.com')) {
+    console.log("Current tab is a YouTube page:", currentTabUrl);
+    setupSubmitButton();
+    fetchAndDisplayFilterWords();
+  } else {
+    console.log("Current tab is not a YouTube page:", currentTabUrl);
+  }
+});
+
 
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
@@ -14,7 +29,7 @@ function setupSubmitButton() {
         // Handle response if needed
         console.log(response);
         setTimeout(() => {
-        fetchAndDisplayFilterWords()
+          fetchAndDisplayFilterWords()
         }, 500);
 
       });
@@ -32,8 +47,6 @@ function setupSubmitButton() {
     }
   });
 }
-// Call the function to set up the submit button
-setupSubmitButton();
 
 function fetchAndDisplayFilterWords() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -92,19 +105,15 @@ function sendRemoveMessage(key) {
       console.log(response.status);
       setTimeout(() => {
         fetchAndDisplayFilterWords()
-        }, 500);
+      }, 500);
     });
   });
 }
 
+function refreshYoutube () {
+  chrome.tabs.reload(currentTab.id);
+}
 
+const refreshButton = document.getElementById("refreshButton");
+refreshButton.addEventListener("click", refreshYoutube);
 
-
-fetchAndDisplayFilterWords();
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     const submitButton = document.getElementById("submitButton");
-//     submitButton.addEventListener("click", handleSubmitButtonClick);
-//     const invokeButton = document.getElementById("invokeButton");
-//     invokeButton.addEventListener("click", sendMessageToContentScript);
-// });

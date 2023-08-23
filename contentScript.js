@@ -1,5 +1,5 @@
 chrome.runtime.sendMessage({ status: "ready" });
-
+console.log("CS is running")
 let fetchFromStorage = {}
 let observer
 // function storeFilterWords(updatedFilterWords) {
@@ -11,6 +11,8 @@ let observer
 //         }
 //     });
 // }
+
+
 
 function createEmptyObjectAndSet(objectName) {
     chrome.storage.sync.get([objectName], result => {
@@ -154,9 +156,9 @@ function removeEle(titleArray) {
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let titleLink = titleArray[i][1];
-        if (titleLink){
+        if (titleLink) {
             let title = titleArray[i][1].getAttribute("title").toLowerCase();
-        
+
             if (shouldRemoveTitle(title, fetchFromStorage)) {
                 ele.classList.add('hidden');
                 // ele.remove();
@@ -175,8 +177,11 @@ function shouldRemoveTitle(title, filterWords) {
 
 async function removeEleBundle() {
     console.log("removeEleBundle is running")
-    const titleArray = await getItemsfromDOM();
-    removeEle(titleArray);
+    if (getWindowURL() === "https://www.youtube.com/") {
+        const titleArray = await getItemsfromDOM();
+        removeEle(titleArray);
+    }
+
 }
 
 function getWindowURL() {
@@ -184,92 +189,83 @@ function getWindowURL() {
 }
 
 
+function handleMessage(message, sender, sendResponse) {
+    const { type, tabId, tabURL, value, action } = message;
 
-(() => {
-    let globalTabId, localtabURL;
-    let initialSetupCompleted = false;
-    // debugger
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        
-        // console.log(message);
-        const { type, tabId, tabURL, value, action } = message;
-        console.log(action);
-
-        localTabId = tabId
-        localtabURL = tabURL
-        if (action === "addKeyToFilterWords") {
-            // Call your content script function
-            console.log("connection works")
-            console.log(message)
-            addKeyToFilterWords(value)
-            // Send a response bk if needed
+    switch (action) {
+        case "addKeyToFilterWords":
+            addKeyToFilterWords(value);
             sendResponse({ status: "success" });
-        }
-        else if (action === "getFilterWords") {
-            sendResponse({ filterWords: fetchFromStorage })
-        }
-        else if (action === "deleteWordFromFilterList") {
-            console.log(message.value, message, value)
-            removeKeyFromFilterWords(message.value)
-            // Respond to the message
-            sendResponse({ status: "success" });
-        }
-            else {
-            sendResponse({ status: "no condintion is met" })
-        }
-    })
-    
-    setTimeout(() => {
-        removeEleBundle() 
-    }, 1000);
-
-    function checkIfBottomReachedAndExecuteScroll() {
-        if (isBottomReached() && (getWindowURL() === "https://www.youtube.com/")) {
-            removeEleBundle();
-        }
+            break;
+        case "getFilterWords":
+            sendResponse({ filterWords: fetchFromStorage });
+            break;
+        case "deleteWordFromFilterList":
+            removeKeyFromFilterWords(message.value);
+            sendResponse({ url: "success" });
+            break;
+        case "setupSubmitButton":
+            sendResponse({ status: getWindowURL() });
+            break;
+        case "run":
+            // Your logic here
+            break;
+        default:
+            sendResponse({ status: "no condition is met" });
     }
-    
+}
 
-    
-    function CheckIfBottomReachedAndExecuteKey(event) {
-        // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
-        if ((event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) && 
-            isBottomReached() && 
-            (getWindowURL() === "https://www.youtube.com/")) {
-            removeEleBundle();
-        }
-    }
-    
-    
-    function throttle(func, limit) {
-        let inThrottle;
-        return function() {
-          const context = this, args = arguments;
-          if (!inThrottle) {
+
+function throttle(func, limit) {
+    let inThrottle;
+    return function () {
+        const context = this, args = arguments;
+        if (!inThrottle) {
             func.apply(context, args);
             inThrottle = true;
             setTimeout(() => inThrottle = false, limit);
-          }
-        };
-      }
-      
-      const throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 1000);
-      const throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
-      
-      window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
-      window.addEventListener('scrkeydownoll', throttledCheckIfBottomReachedAndExecuteKey);
-      
+        }
+    };
+}
 
-
-    // Call checkIfBottomReachedAndExecute every 500 milliseconds (or whatever time interval you prefer)
-    // setInterval(checkIfBottomReachedAndExecute, 500);
+function checkIfBottomReachedAndExecuteScroll() {
+    if (isBottomReached()) {
+        removeEleBundle();
+    }
+}
 
 
 
+function CheckIfBottomReachedAndExecuteKey(event) {
+    // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
+    if ((event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) && 
+        isBottomReached()) {
+        removeEleBundle();
+    }
+}
 
-})()
 
-    
+const throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 1000);
+const throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
+
+
+
+(() => {
+    chrome.runtime.onMessage.addListener(handleMessage);
+  
+    // Event Listeners
+    window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
+    window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
+  
+    // Timeout to remove elements
+    setTimeout(() => {
+      removeEleBundle();
+    }, 1000);
+  
+  })()
+  
+
+
 
 
 
