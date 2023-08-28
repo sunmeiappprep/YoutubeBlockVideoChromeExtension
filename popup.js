@@ -1,4 +1,5 @@
 console.log("popup.js is running")
+let loadLoadedListTitle
 
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
@@ -10,9 +11,9 @@ function setupSubmitButton() {
     // Send a message to contentScript.js with the input value
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const activeTab = tabs[0];
-      chrome.tabs.sendMessage(activeTab.id, { action: "addKeyToFilterWords", value: inputValue }, response => {
+      chrome.tabs.sendMessage(activeTab.id, { action: "addKeyToFilterWords", value: inputValue, listName: loadLoadedListTitle }, response => {
         // Handle response if needed
-        console.log(response);
+        // console.log(response);
         setTimeout(() => {
           fetchAndDisplayFilterWords()
         }, 500);
@@ -36,17 +37,21 @@ function setupSubmitButton() {
 function fetchAndDisplayFilterWords() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "getFilterWords" }, (response) => {
+    chrome.tabs.sendMessage(activeTab.id, { action: "getLastLoadedListTitle" }, (response) => {
       // Use the response to update your list
-      console.log(response)
-      if (response && response.filterWords) {
-        displayObjectAsList(response.filterWords);
+      console.log(response, "fetchAndDisplayFilterWords")
+      if (response && response.obj) {
+        console.log(response)
+        displayObjectAsList(response.obj);
       }
     });
   });
 }
 
 function displayObjectAsList(obj) {
+  if (obj.loadLoadedListTitle) {
+    obj = obj.loadLoadedListTitle
+  }
   const container = document.getElementById("listOfFilterWord");
 
   // Clear previous content
@@ -67,7 +72,7 @@ function displayObjectAsList(obj) {
 
       // Optional: Add an event listener to the button
       button.addEventListener("click", () => {
-        console.log("Button clicked for", key);
+        // console.log("Button clicked for", key);
         sendRemoveMessage(key)
       });
 
@@ -85,22 +90,57 @@ function displayObjectAsList(obj) {
 
 function displayFilterLists(listKeysArray) {
   const dropdown = document.getElementById("dynamicDropdown");
-        
+
+  const dummyOption = document.createElement("option");
+  dummyOption.value = "dummy"; // Set a value for the dummy option if needed
+  dummyOption.text = "Select an option"; // Text for the dummy option
+  dropdown.add(dummyOption);
+
   // Loop through the options and add them to the dropdown
   listKeysArray.forEach((optionText, index) => {
     const option = document.createElement("option");
     option.value = "option" + (index + 1); // or whatever value you want to associate with this option
     option.text = optionText;
     dropdown.add(option);
+
+    console.log(loadLoadedListTitle)
+
   })
+
+
+}
+
+function getLastLoadedListTitle() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    chrome.tabs.sendMessage(activeTab.id, { action: "getLastLoadedListTitle" }, (response) => {
+      // Use the response to update your list
+      console.log(response, "22")
+      if (response && response.title) {
+        loadLoadedListTitle = response.title
+      }
+    });
+  });
+}
+
+
+
+function setupDropdownChangeListener() {
+  const dropdown = document.getElementById("dynamicDropdown");
+
+  // Add an event listener to the dropdown
+  dropdown.addEventListener('change', function () {
+    const selectedText = dropdown.selectedOptions[0].text;
+    loadList(selectedText);
+  });
 }
 
 
 function sendRemoveMessage(key) {
-  console.log("I am in sendREmove", key);
+  // console.log("I am in sendREmove", key);
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: "deleteWordFromFilterList", value: key }, (response) => {
-      console.log(response.status);
+    chrome.tabs.sendMessage(tabs[0].id, { action: "deleteWordFromFilterList", value: key, listName: loadLoadedListTitle }, (response) => {
+      // console.log(response.status);
       setTimeout(() => {
         fetchAndDisplayFilterWords()
       }, 500);
@@ -108,8 +148,8 @@ function sendRemoveMessage(key) {
   });
 }
 
-function refreshYoutube () {
-  chrome.tabs.reload(currentTab.id);
+function refreshYoutube(id) {
+  chrome.tabs.reload(id);
 }
 
 function exportWords() {
@@ -147,7 +187,7 @@ function handleFileSelect(event) {
   const file = event.target.files[0];
   if (file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       try {
         // Parse the JSON content
         const data = JSON.parse(e.target.result);
@@ -163,8 +203,7 @@ function handleFileSelect(event) {
 }
 
 function processImportedData(value) {
-  // console.log("data run")
-  // console.log(data)
+  console.log("data run")
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
 
@@ -173,31 +212,77 @@ function processImportedData(value) {
   });
 }
 
-function createList(){
+function createList() {
   const filterListNameInput = document.getElementById("filterListNameInput");
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
     let value = filterListNameInput.value
-    
+
     // Send a message to the content script in the active tab
     chrome.tabs.sendMessage(activeTab.id, { action: "createList", value: value });
   });
 }
 
-function retrieveLists(){
+function loadList(dropdownText) {
+  // console.log(dropdownText)
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "retrieveLists" }, (response) => {
+    chrome.tabs.sendMessage(activeTab.id, { action: "loadOneList", value: dropdownText }, (response) => {
       // Use the response to update your list
-      console.log(response,this)
-      
+      // console.log(response,"this")
+      console.log("loadOneList", response)
       if (response && response.list) {
-        displayFilterLists(response.list)
+        displayObjectAsList(response.list)
       }
     });
   });
 }
-retrieveLists()
+
+
+
+function retrieveLists() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    chrome.tabs.sendMessage(activeTab.id, { action: "retrieveAllLists" }, (response) => {
+      if (response && response.allList) {
+        var newArray = response.allList.filter(function (item) {
+          return item !== "lastLoadedList";
+        });
+        displayFilterLists(newArray)
+      }
+    });
+  });
+}
+
+function deleteListButtonFunction() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    chrome.tabs.sendMessage(activeTab.id, { action: "deleteList", listName: loadLoadedListTitle }, (response) => {
+      // Use the response to update your list
+      // console.log(response,"this")
+      if (response && response.allList) {
+        console.log(response, "deleteList")
+        displayObjectAsList(response.allList)
+      }
+    });
+  });
+}
+
+function testButtonSendsMessage() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    chrome.tabs.sendMessage(activeTab.id, { action: "testButton" }, (response) => {
+      // Use the response to update your list
+      // console.log(response,this)
+      console.log("test button clicked")
+      if (response) {
+        console.log(response, "testing Button")
+      }
+    });
+  });
+}
+
+
 function initializePopup() {
   const createFilterListNameButton = document.getElementById("createFilterListNameButton");
   createFilterListNameButton.addEventListener("click", createList);
@@ -205,12 +290,16 @@ function initializePopup() {
   const exportWordsButton = document.getElementById("exportWords");
   exportWordsButton.addEventListener("click", exportWords);
 
-  const refreshButton = document.getElementById("refreshButton");
-  refreshButton.addEventListener("click", refreshYoutube);
 
-  document.getElementById('importFile').addEventListener('change', handleFileSelect);
 
-  console.log("popup.js is running");
+  const deleteListButton = document.getElementById("DeleteFilterListNameButton");
+  deleteListButton.addEventListener("click", deleteListButtonFunction);
+
+
+  const testButton = document.getElementById("TestingButton");
+  testButton.addEventListener("click", testButtonSendsMessage);
+
+  // console.log("popup.js is running");
   var currentTabUrl;
   var currentTab;
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -218,14 +307,43 @@ function initializePopup() {
     currentTabUrl = currentTab.url;
 
     if (currentTabUrl && currentTabUrl.includes('youtube.com')) {
-      console.log("Current tab is a YouTube page:", currentTabUrl);
+      // console.log("Current tab is a YouTube page:", currentTabUrl);
       setupSubmitButton();
       fetchAndDisplayFilterWords();
     } else {
-      console.log("Current tab is not a YouTube page:", currentTabUrl);
+      // console.log("Current tab is not a YouTube page:", currentTabUrl);
     }
+
+  });
+
+}
+
+function makeRefreshButtonFunction() {
+  var currentTabUrl;
+  var currentTab;
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    currentTab = tabs[0]; // There should only be one in this list
+    currentTabUrl = currentTab.url;
+
+
+    const refreshButton = document.getElementById("refreshButton");
+    refreshButton.addEventListener("click", function () {
+      refreshYoutube(currentTab.id);
+    });
   });
 }
 
 // Call the function to execute everything inside it
-initializePopup();
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Your code here, such as event listeners, DOM manipulations, etc.
+  getLastLoadedListTitle()
+  initializePopup();
+  retrieveLists()
+  setupDropdownChangeListener()
+  makeRefreshButtonFunction()
+  document.getElementById('importFile').addEventListener('change', handleFileSelect);
+
+
+});
