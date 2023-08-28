@@ -15,11 +15,8 @@ function getLastLoadListTitle(setFunction,callback) {
 
 function fetchOneListFromStorageFunction (listName,callback) {
     chrome.storage.sync.get([listName], result => {
-        const value = result.lastLoadedList;
         if (callback) {
             callback(result) // Call the setFunction with the retrieved value
-            callback(value) // Call the setFunction with the retrieved value
-
         }
     });
 }
@@ -29,11 +26,8 @@ function fetchOneListFromStorageFunction (listName,callback) {
 function getLastLoadedListAndSet(lastListName,callback) {
     console.log(lastListName)
     chrome.storage.sync.get([lastListName], result => {
-        console.log(result, "getLastLoadedListAndSet");
-        console.log(result.lastListName, "lll")
         fetchFromStorage = result[lastListName]
         if (callback) callback(result)
-        debugger
         // ...
     });
 }
@@ -46,8 +40,6 @@ function consoleLog (value){
 }
 
 function createList(value) {
-    // console.log("this is CS createList")
-    // console.log(value)
 
     chrome.storage.sync.set({ [value]: {} }, () => {
         if (chrome.runtime.lastError) {
@@ -65,7 +57,6 @@ function createEmptyObjectAndSet(objectName) {
             console.error(`Error retrieving "${objectName}":`, chrome.runtime.lastError);
         } else {
             const existingObject = result[objectName];
-            console.log(existingObject, "exisitng obj")
             if (existingObject === undefined) {
                 const emptyObject = {};
                 chrome.storage.sync.set({ [objectName]: emptyObject }, () => {
@@ -226,7 +217,7 @@ function handleMessage(message, sender, sendResponse) {
             // sendResponse({ filterWords: fetchFromStorage });
             break;
         case "testButton":
-            fetchOneListFromStorageFunction("lastLoadedList",consoleLog)
+            fetchOneListFromStorageFunction("filterWords",consoleLog)
 
             // sendResponse({ filterWords: fetchFromStorage });
             break;
