@@ -1,12 +1,10 @@
-// var readyTabs = {};
+var readyTabs = {};
 
-// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-//   if (request.status === "ready") {
-//     // console.log("true");
-//     // Mark the tab as ready
-//     readyTabs[sender.tab.id] = true;
-//   }
-// });
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.status === "ready") {
+    readyTabs[sender.tab.id] = true;
+  }
+});
 
 // chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 //   console.log(tabId, changeInfo, tab);
