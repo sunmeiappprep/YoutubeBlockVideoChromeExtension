@@ -1,5 +1,14 @@
+import { getActiveTabURL } from "./utils.js";
+ 
 console.log("popup.js is running")
-let loadLoadedListTitle
+var loadLoadedListTitle
+
+// Get the HTML element by its id
+function displayWhichListIsLoaded(){
+  var outputElement = document.getElementById("title");
+    outputElement.textContent = ""
+    outputElement.textContent = loadLoadedListTitle;
+}
 
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
@@ -39,9 +48,9 @@ function fetchAndDisplayFilterWords() {
     const activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, { action: "getLastLoadedListTitle" }, (response) => {
       // Use the response to update your list
-      console.log(response, "fetchAndDisplayFilterWords")
+      // console.log(response, "fetchAndDisplayFilterWords")
       if (response && response.obj) {
-        console.log(response)
+        // console.log(response)
         displayObjectAsList(response.obj);
       }
     });
@@ -82,6 +91,7 @@ function displayObjectAsList(obj) {
       // Append the list item to the unordered list
       ul.appendChild(li);
     }
+    
   }
 
   // Append the list to the container
@@ -103,12 +113,17 @@ function displayFilterLists(listKeysArray) {
     option.text = optionText;
     dropdown.add(option);
 
-    console.log(loadLoadedListTitle)
 
   })
 
 
 }
+
+function deleteDisplayFilterList() {
+  const dropdown = document.getElementById("dynamicDropdown");
+  dropdown.innerHTML = ''; // This will remove all child elements (options) from the dropdown
+}
+
 
 function getLastLoadedListTitle() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -118,6 +133,7 @@ function getLastLoadedListTitle() {
       console.log(response, "22")
       if (response && response.title) {
         loadLoadedListTitle = response.title
+        displayWhichListIsLoaded(response.title)
       }
     });
   });
@@ -132,7 +148,11 @@ function setupDropdownChangeListener() {
   dropdown.addEventListener('change', function () {
     const selectedText = dropdown.selectedOptions[0].text;
     loadList(selectedText);
+    loadLoadedListTitle = selectedText
+    console.log(loadLoadedListTitle)
+    displayWhichListIsLoaded()
   });
+
 }
 
 
@@ -217,10 +237,24 @@ function createList() {
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
     let value = filterListNameInput.value
-
+    if(value){
+      chrome.tabs.sendMessage(activeTab.id, { action: "createList", value: value });
+    }
+    else{
+      console.log("List Name cant be empty")
+    }
+    cleanupDisplayList()
     // Send a message to the content script in the active tab
-    chrome.tabs.sendMessage(activeTab.id, { action: "createList", value: value });
+
+    loadLoadedListTitle = filterListNameInput.value
   });
+}
+
+function cleanupDisplayList(){
+  setTimeout(() => {
+    deleteDisplayFilterList()
+    retrieveLists() 
+  }, 100);
 }
 
 function loadList(dropdownText) {
@@ -248,6 +282,7 @@ function retrieveLists() {
         var newArray = response.allList.filter(function (item) {
           return item !== "lastLoadedList";
         });
+        newArray.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
         displayFilterLists(newArray)
       }
     });
@@ -260,27 +295,33 @@ function deleteListButtonFunction() {
     chrome.tabs.sendMessage(activeTab.id, { action: "deleteList", listName: loadLoadedListTitle }, (response) => {
       // Use the response to update your list
       // console.log(response,"this")
+      cleanupDisplayList()
+      loadLoadedListTitle = "No List Loaded"
+      console.log(loadLoadedListTitle)
+      displayWhichListIsLoaded()
       if (response && response.allList) {
         console.log(response, "deleteList")
         displayObjectAsList(response.allList)
+
       }
     });
   });
 }
 
-function testButtonSendsMessage() {
+async function testButtonSendsMessage() {
+  const tabButton = await getCurrentTab();
+  
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, { action: "testButton" }, (response) => {
-      // Use the response to update your list
-      // console.log(response,this)
-      console.log("test button clicked")
+      console.log("test button clicked");
       if (response) {
-        console.log(response, "testing Button")
+        console.log(response, "testing Button");
       }
     });
   });
 }
+
 
 
 function initializePopup() {
@@ -336,14 +377,26 @@ function makeRefreshButtonFunction() {
 // Call the function to execute everything inside it
 
 
-document.addEventListener('DOMContentLoaded', function () {
-  // Your code here, such as event listeners, DOM manipulations, etc.
-  getLastLoadedListTitle()
-  initializePopup();
-  retrieveLists()
-  setupDropdownChangeListener()
-  makeRefreshButtonFunction()
-  document.getElementById('importFile').addEventListener('change', handleFileSelect);
+document.addEventListener('DOMContentLoaded', async () => {
+  
+  const activeTab = await getActiveTabURL();
 
+  if (activeTab.url.includes("youtube.com")) {
+    
+  console.log(activeTab)
 
+    getLastLoadedListTitle()
+    initializePopup();
+    displayWhichListIsLoaded()
+    retrieveLists()
+    setupDropdownChangeListener()
+    makeRefreshButtonFunction()
+    document.getElementById('importFile').addEventListener('change', handleFileSelect);
+    
+  } else {
+    const container = document.getElementsByClassName("container")[0];
+
+    container.innerHTML = '<div class="title">This is not a youtube video page.</div>';
+    
+  }
 });
