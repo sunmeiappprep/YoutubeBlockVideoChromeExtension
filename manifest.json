@@ -3,15 +3,16 @@
     "version": "0.1.0",
     "description": "Filter Videos for Youtube Homepage",
     "permissions": ["activeTab", "scripting", "storage", "tabs", "webNavigation"],
+    "host_permissions": ["*://*/*"],
     "background": {
       "service_worker": "background.js"
     },
     "content_scripts": [
-        {
-          "matches": ["*://www.youtube.com/"],
-          "js": ["contentScript.js"]
-        }
-      ],
+      {
+        "matches": ["*://www.youtube.com/*"],
+        "js": ["contentScript.js"]
+      }
+    ],
     "action": {
       "default_icon": {
         "16": "assets/ext-icon.png",

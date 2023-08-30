@@ -1,8 +1,9 @@
-chrome.runtime.sendMessage({ status: "ready" });
+
 console.log("CS is running")
-let fetchFromStorage = {}
-let lastLoadedListValue;
-let lastLoadedListTitle;
+
+var fetchFromStorage = {}
+var lastLoadedListValue;
+var lastLoadedListTitle;
 function getLastLoadListTitle(setFunction,callback) {
     chrome.storage.sync.get("lastLoadedList", result => {
         const value = result.lastLoadedList;
@@ -20,6 +21,33 @@ function fetchOneListFromStorageFunction (listName,callback) {
         }
     });
 }
+
+function getCurrentListFromStorage(callback) {
+    chrome.storage.sync.get("listThatWillBeRendered", result => {
+        if (callback && result) {
+            consoleLog("getting from Storage")
+            callback(result); // Call the callback function with the retrieved value
+        }
+        else{
+            chrome.storage.sync.set({ "listThatWillBeRendered": undefined }, result => {
+                if (result) {
+                    consoleLog("created empty obj")
+                    callback(result); // Call the callback function with the result of set
+                }
+            });
+        }
+    });
+}
+
+function setListToStorage(value, callback) {
+    chrome.storage.sync.set({ "listThatWillBeRendered": value }, result => {
+        if (callback) {
+            consoleLog("setting to Storage")
+            callback(result); // Call the callback function with the result of set
+        }
+    });
+}
+
 
 
 
@@ -48,8 +76,21 @@ function createList(value) {
             console.log(`Empty object "${value}" stored successfully`);
         }
     });
+
+    chrome.storage.sync.set({ lastLoadedList: [value] }, () => {
+        if (chrome.runtime.lastError) {
+            console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+        } else {
+            console.log(`Empty object "${value}" stored successfully`);
+        }
+    });
+
+    fetchOneListFromStorageFunction([value],fetchFromStorage)
 }
 
+function fetchFromStorage (obj) {
+    fetchFromStorage = obj
+}
 
 function createEmptyObjectAndSet(objectName) {
     chrome.storage.sync.get([objectName], result => {
@@ -111,7 +152,7 @@ function getItemsfromDOM() {
 
 
 function removeEle(titleArray) {
-    console.log(fetchFromStorage,"this is fetchFromStorage")
+    // console.log(fetchFromStorage,"this is fetchFromStorage")
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let titleLink = titleArray[i][1];
@@ -129,10 +170,14 @@ function removeEle(titleArray) {
 
 
 function shouldRemoveTitle(title, filterWords) {
+    if (!title || !filterWords) {
+        return false; // Return false if title or filterWords is null or undefined
+    }
 
     const lowerCaseTitle = title.toLowerCase();
     return Object.keys(filterWords).some(word => lowerCaseTitle.includes(word));
 }
+
 
 async function removeEleBundle() {
     // console.log("removeEleBundle is running")
@@ -151,7 +196,6 @@ function getWindowURL() {
 function addKeyToFilterWords(listName,value,callback){
     chrome.storage.sync.get([listName], result => {
         fetchFromStorage = result[listName];
-        debugger;
         if (value) {
              fetchFromStorage[value] = true;
             // Save the modified object back to chrome.storage.sync
@@ -184,7 +228,7 @@ function deleteList(listName) {
   
 
 function handleMessage(message, sender, sendResponse) {
-    const { type, tabId, tabURL, value, action,listName } = message;
+    const {value, action,listName } = message;
     // console.log(message, sender, sendResponse)
     switch (action) {
         case "addKeyToFilterWords":
@@ -217,8 +261,7 @@ function handleMessage(message, sender, sendResponse) {
             // sendResponse({ filterWords: fetchFromStorage });
             break;
         case "testButton":
-            fetchOneListFromStorageFunction("filterWords",consoleLog)
-
+            testing()
             // sendResponse({ filterWords: fetchFromStorage });
             break;
         case "loadOneList":
@@ -235,7 +278,7 @@ function handleMessage(message, sender, sendResponse) {
             return true; // This keeps the message channel open for the asynchronous response
             break
         case "getLastLoadedListTitle":
-            console.log(fetchFromStorage,"reload")
+            // console.log(fetchFromStorage,"reload")
             if (lastLoadedListTitle){
                 sendResponse({ status: "success", title: lastLoadedListTitle, obj:fetchFromStorage });
             }
@@ -255,7 +298,9 @@ function handleMessage(message, sender, sendResponse) {
         case "createList":
             console.log("createList action triggered");
             createList(value)
-            sendResponse({ status: "success" });
+            // retrieveListsFromStorage().then(allList => {
+            //     sendResponse({ status: "success", allList: allList });
+            // });
             break;
         case "importJSON":
             console.log("importJSON action triggered");
@@ -264,11 +309,22 @@ function handleMessage(message, sender, sendResponse) {
             console.log(value)
             sendResponse({ status: "success" });
             break;
+        case "NAVIGATION_UPDATED":
+            console.log("NAVIGATION_UPDATED triggered");
+            break;
         default:
             console.log("Default case reached: no condition is met");
             sendResponse({ status: "no condition is met" });
+            removeEleBundle() 
             break
     }
+}
+
+
+
+async function testing(){
+    const tabButton = await getCurrentTab();
+    console.log("Value of tabButton:", tabButton); // Log the value of tabButton
 }
 
 function removeKeyFromFilterWords(listName, value, callback) {
@@ -320,7 +376,7 @@ function retrieveListsFromStorage() {
       chrome.storage.sync.get(null, results => {
         // console.log(results, "renderAllList ()");
         const listKeysArray = Object.keys(results);
-        console.log(results,"from retrieveListsFromStorage")
+        // console.log(results,"from retrieveListsFromStorage")
         resolve(listKeysArray);
       });
     });
@@ -350,13 +406,23 @@ function CheckIfBottomReachedAndExecuteKey(event) {
 }
 
 
-const throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 1000);
-const throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
+var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 1000);
+var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
 
 
 (() => {
     chrome.runtime.onMessage.addListener(handleMessage);
 
+    document.addEventListener("DOMContentLoaded", () => {
+        // Notify the background script that the content script is ready
+
+        chrome.runtime.sendMessage({ type: "CONTENT_SCRIPT_READY" });
+
+      });
+      
+      // Other content script code here
+      
+    
 
     // Event Listeners
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
