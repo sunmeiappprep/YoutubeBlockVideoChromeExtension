@@ -175,7 +175,7 @@ function refreshYoutube(id) {
 function exportWords() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "getFilterWords" }, (response) => {
+    chrome.tabs.sendMessage(activeTab.id, { action: "exportWords" }, (response) => {
       if (response && response.filterWords) {
         // Stringifying the object to turn it into a JSON string
         const jsonStr = JSON.stringify(response.filterWords, null, 2); // Indented with 2 spaces
@@ -222,13 +222,17 @@ function handleFileSelect(event) {
   }
 }
 
-function processImportedData(value) {
+function processImportedData(value,listName) {
   console.log("data run")
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
 
     // Send a message to the content script in the active tab
-    chrome.tabs.sendMessage(activeTab.id, { action: "importJSON", value: value });
+    chrome.tabs.sendMessage(activeTab.id, { action: "importJSON", value: value, listName: loadLoadedListTitle }, function(response) {
+      // Do something with the response
+      console.log(response,"import");
+      displayObjectAsList(response.words)
+    });
   });
 }
 
@@ -280,7 +284,7 @@ function retrieveLists() {
     chrome.tabs.sendMessage(activeTab.id, { action: "retrieveAllLists" }, (response) => {
       if (response && response.allList) {
         var newArray = response.allList.filter(function (item) {
-          return item !== "lastLoadedList";
+          return item !== "lastLoadedList" && item !== "lastLoadedListTitle" && item !== "fetchFromStorage2";
         });
         newArray.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
         displayFilterLists(newArray)
@@ -309,8 +313,6 @@ function deleteListButtonFunction() {
 }
 
 async function testButtonSendsMessage() {
-  const tabButton = await getCurrentTab();
-  
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, { action: "testButton" }, (response) => {
@@ -318,6 +320,9 @@ async function testButtonSendsMessage() {
       if (response) {
         console.log(response, "testing Button");
       }
+      setTimeout(() => {
+        fetchAndDisplayFilterWords()
+      }, 500);
     });
   });
 }
