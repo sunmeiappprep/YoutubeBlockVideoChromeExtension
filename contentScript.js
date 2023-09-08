@@ -1,66 +1,45 @@
 
 console.log("CS is running")
 
-var fetchFromStorage = {}
-var lastLoadedListTitle;
-function getLastLoadListTitle(setFunction,callback) {
-    chrome.storage.sync.get("lastLoadedList", result => {
-        const value = result.lastLoadedList;
-        storeVariableInChromeStorage("lastLoadedListTitle", value)
-        lastLoadedListTitle = value;
-        if (setFunction) {
-            setFunction(value,callback); // Call the setFunction with the retrieved value
-        }
-    });
-}         
-
 function storeVariableInChromeStorage(variableName, value) {
     return new Promise((resolve, reject) => {
-      chrome.storage.sync.set({ [variableName]: value }, () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(`Stored ${variableName}`);
-        }
-      });
+        chrome.storage.sync.set({ [variableName]: value }, () => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(`Stored ${variableName}`);
+            }
+        });
     });
-  }
-
-  function storeVariableInChromeStorageAsOneObj(obj) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.sync.set(obj, () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(`Stored ${variableName}`);
-        }
-      });
-    });
-  }
-
-function getVariableFromChromeStorage(variableName) {
-return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(variableName, (result) => {
-    if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-    } else {
-        resolve(result[variableName]);
-    }
-    });
-});
 }
 
-// storeVariableInChromeStorage('fetchFromStorage2', fetchFromStorage)
-//   .then(() => getVariableFromChromeStorage('fetchFromStorage2'))
-//   .then(data => console.log(data,'fetchFromStorage2'))
-//   .catch(err => {
-//     console.log('An error occurred:', err);
-//   });
+function storeVariableInChromeStorageAsOneObj(obj) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.set(obj, () => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(`Stored ${variableName}`);
+            }
+        });
+    });
+}
+
+function getVariableFromChromeStorage(variableName) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(variableName, (result) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(result[variableName]);
+            }
+        });
+    });
+}
 
 
 
-
-function fetchOneListFromStorageFunction (listName,callback) {
+function fetchOneListFromStorageFunction(listName, callback) {
     chrome.storage.sync.get([listName], result => {
         if (callback) {
             callback(result) // Call the setFunction with the retrieved value
@@ -68,61 +47,13 @@ function fetchOneListFromStorageFunction (listName,callback) {
     });
 }
 
-function fetchOneListFromStorageFunction2 (listName,setCallback) {
-    chrome.storage.sync.get([listName], result => {
-        if (result[listName]) {
-            setCallback(result[listName])// Call the setFunction with the retrieved value
-        }
-    });
-}
-
-function getCurrentListFromStorage(callback) {
-    chrome.storage.sync.get("listThatWillBeRendered", result => {
-        if (callback && result) {
-            consoleLog("getting from Storage")
-            callback(result); // Call the callback function with the retrieved value
-        }
-        else{
-            chrome.storage.sync.set({ "listThatWillBeRendered": undefined }, result => {
-                if (result) {
-                    consoleLog("created empty obj")
-                    callback(result); // Call the callback function with the result of set
-                }
-            });
-        }
-    });
-}
-
-function setListToStorage(value, callback) {
-    chrome.storage.sync.set({ "listThatWillBeRendered": value }, result => {
-        if (callback) {
-            consoleLog("setting to Storage")
-            callback(result); // Call the callback function with the result of set
-        }
-    });
-}
 
 
-
-
-function getLastLoadedListAndSet(lastListName,callback) {
-    console.log(lastListName)
-    chrome.storage.sync.get([lastListName], result => {
-        storeVariableInChromeStorage("fetchFromStorage2",result[lastListName])
-        fetchFromStorage = result[lastListName]
-        if (callback) callback(result)
-        // ...
-    });
-}
-
-getLastLoadListTitle(getLastLoadedListAndSet,consoleLog);
-
-
-function consoleLog (value){
+function consoleLog(value) {
     console.log(value)
 }
 
-function createList(value) {
+async function createList(value) {
 
     chrome.storage.sync.set({ [value]: {} }, () => {
         if (chrome.runtime.lastError) {
@@ -140,15 +71,20 @@ function createList(value) {
         }
     });
 
-    fetchOneListFromStorageFunction([value],setFetchFromStorageFunction)
+    try {
+        await storeVariableInChromeStorage("lastLoadedList", value);
+        let resultObj = await getObjFromLastLoadedKey();
+        // console.log(resultObj); // Do something with the object
+
+    } catch (error) {
+        console.error(error);
+    }
+
+
+    // fetchOneListFromStorageFunction([value], setFetchFromStorageFunction)
 }
 
-function setFetchFromStorageFunction (obj) {
-    storeVariableInChromeStorage("fetchFromStorage2",obj)
-    fetchFromStorage = obj
-}
-
-function importJSON(json, listName,callback) {
+function importJSON(json, listName, callback) {
     chrome.storage.sync.set({ [listName]: json }, () => {
         if (chrome.runtime.lastError) {
             console.error(`Error storing the object "${listName}":`, chrome.runtime.lastError);
@@ -159,8 +95,12 @@ function importJSON(json, listName,callback) {
 
 }
 
-
-
+function createDefault () {
+    createList("lastLoadedList");
+    createList("lastLoadedListTitle");
+    createList("fetchFromStorage2");
+    createList("asd");
+}
 
 function isBottomReached() {
     // Calculate how far the user has scrolled down
@@ -187,22 +127,39 @@ function getItemsfromDOM() {
 }
 
 
-function removeEle(titleArray) {
-    // console.log(fetchFromStorage,"this is fetchFromStorage")
+async function removeEle(titleArray) {
+    let resultObj
+    try {
+        resultObj = await getObjFromLastLoadedKey();
+        console.log(resultObj); // Do something with the object
+
+    } catch (error) {
+        console.error(error);
+    }
+
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let titleLink = titleArray[i][1];
         if (titleLink) {
             let title = titleArray[i][1].getAttribute("title").toLowerCase();
-
-            if (shouldRemoveTitle(title, fetchFromStorage)) {
+            if (shouldRemoveTitle(title, resultObj)) {
                 ele.classList.add('hidden');
-                // ele.remove();
             }
-        }
 
+        }
     }
 }
+
+
+async function getObjFromLastLoadedKey() {
+    const result = await getVariableFromChromeStorage("lastLoadedList");
+    if (result) {
+        const obj = await getVariableFromChromeStorage(result);
+        return obj;
+    }
+}
+
+
 
 
 function shouldRemoveTitle(title, filterWords) {
@@ -211,7 +168,11 @@ function shouldRemoveTitle(title, filterWords) {
     }
 
     const lowerCaseTitle = title.toLowerCase();
-    return Object.keys(filterWords).some(word => lowerCaseTitle.includes(word));
+    
+    // Convert filter words to lowercase
+    const lowerCaseFilterWords = Object.keys(filterWords).map(word => word.toLowerCase());
+
+    return lowerCaseFilterWords.some(word => lowerCaseTitle.includes(word));
 }
 
 
@@ -229,27 +190,7 @@ function getWindowURL() {
 }
 
 
-function addKeyToFilterWords(listName,value,callback){
-    chrome.storage.sync.get([listName], result => {
-        fetchFromStorage = result[listName];
-        if (value) {
-             fetchFromStorage[value] = true;
-            // Save the modified object back to chrome.storage.sync
-            let updateObject = {};
-            updateObject[listName] = fetchFromStorage; // Prepare the object with the right key
-            chrome.storage.sync.set(updateObject, () => {
-                if (chrome.runtime.lastError) {
-                    console.error('Error while updating the storage:', chrome.runtime.lastError);
-                } else {
-                    if (callback) callback(fetchFromStorage);
-                }
-            });
-        }
-    });
-    getLastLoadListTitle(getLastLoadedListAndSet,consoleLog);
-}
-
-function addKeyToFilterWordsFun(listName, value,callback) {
+function addKeyToFilterWordsFun(listName, value) {
     getVariableFromChromeStorage([listName])
         .then((result) => {
             if (value) {
@@ -263,45 +204,47 @@ function addKeyToFilterWordsFun(listName, value,callback) {
         .then((updatedResult) => {
             storeVariableInChromeStorageAsOneObj(updatedResult)
         });
-        getLastLoadListTitle(getLastLoadedListAndSet,consoleLog);
+    // getLastLoadListTitle(getLastLoadedListAndSet, consoleLog);
 }
 
 
 function deleteList(listName) {
     return new Promise((resolve, reject) => {
-      chrome.storage.sync.remove([listName], () => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError));
-        } else {
-          resolve('Item removed successfully');
-        }
-      });
+        chrome.storage.sync.remove([listName], () => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError));
+            } else {
+                resolve('Item removed successfully');
+                storeVariableInChromeStorage("lastLoadedList","No List Loaded")
+            }
+        });
     });
-  }
-  
-  
+}
+
+
 
 function handleMessage(message, sender, sendResponse) {
-    const {value, action,listName } = message;
+    const { value, action, listName } = message;
     // console.log(message, sender, sendResponse)
     switch (action) {
         case "addKeyToFilterWords":
             console.log("addKeyToFilterWords action triggered");
-            addKeyToFilterWords(listName,value,consoleLog);
+            addKeyToFilterWordsFun(listName,value)
+            // addKeyToFilterWords(listName, value, consoleLog);
             sendResponse({ status: "success" });
             break;
         case "deleteList":
             console.log("deleteList action triggered");
             deleteList(listName)
-            .then(() => {
-              return retrieveListsFromStorage(); // Returning a promise to chain the next then
-            })
-            .then(allList => {
-              sendResponse({ status: "success", allList: allList });
-            })
-            .catch(error => {
-              console.error(error); // Handling any errors that might occur in the chain
-            });
+                .then(() => {
+                    return retrieveListsFromStorage(); // Returning a promise to chain the next then
+                })
+                .then(allList => {
+                    sendResponse({ status: "success", allList: allList });
+                })
+                .catch(error => {
+                    console.error(error); // Handling any errors that might occur in the chain
+                });
             break;
         case "retrieveAllLists":
             console.log("retrieveLists action triggered");
@@ -310,62 +253,83 @@ function handleMessage(message, sender, sendResponse) {
             });
             return true; // This keeps the message channel open for the asynchronous response
             break
-        case "exportWords":
-            // console.log("getFilterWords action triggered");
-            sendResponse({ filterWords: fetchFromStorage });
-            break;
-        case "testButton":
-            getVariableFromChromeStorage('fetchFromStorage2')
-            .then(data => {
-              console.log(data, 'fetchFromStorage2');
-              sendResponse({ filterWords: data });  // Sending the data here
-            })
-            .catch(err => {
-              console.log('An error occurred:', err);
-              sendResponse({ error: 'An error occurred:' + err });  // Sending error here
-            });
-
-            getVariableFromChromeStorage('lastLoadedListTitle')
-            .then(data => {
-              console.log(data, 'lastLoadedListTitle');
-              sendResponse({ lastLoadedTitle: data });  // Sending the data here
-            })
-            .catch(err => {
-              console.log('An error occurred:', err);
-              sendResponse({ error: 'An error occurred:' + err });  // Sending error here
-            });
-
-            addKeyToFilterWordsFun("w2","eight",getLastLoadListTitle)
-
+            case "exportWords":
+                getObjFromLastLoadedKey()
+                    .then((obj) => {
+                        console.log(obj); // Example usage
+                        sendResponse({ status: "success", filterWords: obj });
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                    });
+                return true;  // Will respond asynchronously
+                break;
             
-          return true;  // Keeps the message channel open for asynchronous response
-          
+        case "testButton":
+            // getVariableFromChromeStorage('fetchFromStorage2')
+            //     .then(data => {
+            //         console.log(data, 'fetchFromStorage2');
+            //         sendResponse({ filterWords: data });  // Sending the data here
+            //     })
+            //     .catch(err => {
+            //         console.log('An error occurred:', err);
+            //         sendResponse({ error: 'An error occurred:' + err });  // Sending error here
+            //     });
+
+            // getVariableFromChromeStorage('lastLoadedListTitle')
+            //     .then(data => {
+            //         console.log(data, 'lastLoadedListTitle');
+            //         sendResponse({ lastLoadedTitle: data });  // Sending the data here
+            //     })
+            //     .catch(err => {
+            //         console.log('An error occurred:', err);
+            //         sendResponse({ error: 'An error occurred:' + err });  // Sending error here
+            //     });
+
+            // addKeyToFilterWordsFun("w2", "nine")
+
+            // getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
+            getObjFromLastLoadedKey()
+            return true;  // Keeps the message channel open for asynchronous response
+
             break;
         case "loadOneList":
             console.log("loadOneList action triggered");
-            loadOneList(value,consoleLog).then(list => {
-                let response = list[value];
-                chrome.storage.sync.set({ lastLoadedList:value }, () => {
-                    if (chrome.runtime.lastError) {
-                    } else {
-                    }
-                });
-                sendResponse({ status: "success2", list: response,obj:fetchFromStorage });
-            });
-            return true; // This keeps the message channel open for the asynchronous response
-            break
+            storeVariableInChromeStorage("lastLoadedList",value).then(() =>{
+                getVariableFromChromeStorage(value).then((result) => {
+                    console.log(" getVariableFromChromeStorage(value)")
+                    sendResponse({ status: "success", list: result });
+                })
+                return true; // This keeps the message channel open for the asynchronous response
+            })
+
         case "getLastLoadedListTitle":
-            // console.log(fetchFromStorage,"reload")
-            if (lastLoadedListTitle){
-                sendResponse({ status: "success", title: lastLoadedListTitle, obj:fetchFromStorage });
-            }
-            else{
-                sendResponse({ status: "fail", title: "No List Set" })
-            }
-            return true;
+            getVariableFromChromeStorage("lastLoadedList")
+                .then((result) => {
+                    if (result) {
+                        // console.log(result);
+                        return getVariableFromChromeStorage(result)
+                            .then((obj) => {
+                                return { result, obj };  // Wrap both result and obj into an object
+                            });
+                    } else {
+                        sendResponse({ status: "fail", title: "No List Set" });
+                        return Promise.reject('No List Set');
+                    }
+                })
+                .then(({ result, obj }) => {  // Destructure the object to get result and obj
+                    // console.log(obj);
+                    sendResponse({ status: "success", title: result, obj: obj });
+                })
+                .catch((error) => {
+                    console.error('An error occurred:', error);
+                    // Handle your error appropriately here
+                });
+            return true; // Indicates we will respond asynchronously
+            break;
         case "deleteWordFromFilterList":
             console.log("deleteWordFromFilterList action triggered");
-            removeKeyFromFilterWords(message.listName,message.value,consoleLog);
+            removeKeyFromFilterWords(message.listName, message.value, consoleLog);
             sendResponse({ url: "success" });
             break;
         case "setupSubmitButton":
@@ -382,8 +346,8 @@ function handleMessage(message, sender, sendResponse) {
         case "importJSON":
             console.log("importJSON action triggered");
             debugger
-            importJSON(value,listName)
-            sendResponse({ status: "success",words:value });
+            importJSON(value, listName)
+            sendResponse({ status: "success", words: value });
             break;
         case "NAVIGATION_UPDATED":
             console.log("NAVIGATION_UPDATED triggered");
@@ -391,39 +355,27 @@ function handleMessage(message, sender, sendResponse) {
         default:
             console.log("Default case reached: no condition is met");
             sendResponse({ status: "no condition is met" });
-            removeEleBundle() 
+            removeEleBundle()
             break
     }
 }
 
 
 
-async function testing(){
+async function testing() {
     const tabButton = await getCurrentTab();
     console.log("Value of tabButton:", tabButton); // Log the value of tabButton
 }
 
 function removeKeyFromFilterWords(listName, value, callback) {
-    chrome.storage.sync.get([listName], result => {
-        storeVariableInChromeStorage("fetchFromStorage2",result[listName])
-        fetchFromStorage = result[listName];
-        debugger;
-        if (fetchFromStorage[value]) {
-            delete fetchFromStorage[value];
-            
-            // Save the modified object back to chrome.storage.sync
-            let updateObject = {};
-            updateObject[listName] = fetchFromStorage; // Prepare the object with the right key
-            chrome.storage.sync.set(updateObject, () => {
-                if (chrome.runtime.lastError) {
-                    console.error('Error while updating the storage:', chrome.runtime.lastError);
-                } else {
-                    if (callback) callback(fetchFromStorage);
-                }
-            });
+    getVariableFromChromeStorage(listName).then(result =>{
+        console.log(result)
+        if(result){
+            delete result[value]
+            console.log(result)
+            return result
         }
-    });
-    getLastLoadListTitle(getLastLoadedListAndSet,consoleLog);
+    }).then(updateObject => storeVariableInChromeStorage(listName,updateObject))
 }
 
 
@@ -450,30 +402,15 @@ function checkIfBottomReachedAndExecuteScroll() {
 
 function retrieveListsFromStorage() {
     return new Promise((resolve) => {
-      chrome.storage.sync.get(null, results => {
-        // console.log(results, "renderAllList ()");
-        const listKeysArray = Object.keys(results);
-        // console.log(results,"from retrieveListsFromStorage")
-        resolve(listKeysArray);
-      });
+        chrome.storage.sync.get(null, results => {
+            // console.log(results, "renderAllList ()");
+            const listKeysArray = Object.keys(results);
+            // console.log(results,"from retrieveListsFromStorage")
+            resolve(listKeysArray);
+        });
     });
-  }
-
-function loadOneList(listName,callback) {
-    console.log("loadOneList")
-    return new Promise((resolve) => {
-    // console.log(listName,"loadOnelist")
-    chrome.storage.sync.get([listName], results => {
-    console.log(results)
-    fetchFromStorage = results[listName]
-    storeVariableInChromeStorage("fetchFromStorage2",results[listName])
-    storeVariableInChromeStorage("lastLoadedListTitle",listName)
-    callback(fetchFromStorage)
-    callback(results[listName])
-    resolve(results);
-    });
-});
 }
+
 
 function CheckIfBottomReachedAndExecuteKey(event) {
     // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
@@ -487,29 +424,53 @@ function CheckIfBottomReachedAndExecuteKey(event) {
 var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 1000);
 var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 1000);
 
-
 (() => {
+    getVariableFromChromeStorage("lastLoadedList")
+    .then(value => {
+        if (value === undefined) {
+            createDefault()
+            console.log("The variable does not exist in storage.");
+        } else {
+            console.log("The variable exists, and its value is:", value);
+        }
+    })
+    .catch(error => {
+        console.error("An error occurred:", error);
+    });
+
+
+
+    const intervalId2 = setInterval(() => {
+        // Send a message to popup.js
+        chrome.runtime.sendMessage({type: "myMessage", payload: `Hello from content script, count: ${count + 1}`}, (response) => {
+            // Handle the response if needed
+            console.log(response);
+        });
+    }, 1000);  // Change the interval as needed
+
+    
+
     chrome.runtime.onMessage.addListener(handleMessage);
 
-    document.addEventListener("DOMContentLoaded", () => {
-        // Notify the background script that the content script is ready
 
-        chrome.runtime.sendMessage({ type: "CONTENT_SCRIPT_READY" });
 
-      });
-      
-      // Other content script code here
-      
-    
+    // Other content script code here
+
+
 
     // Event Listeners
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
     window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
 
     // Timeout to remove elements
-    setTimeout(() => {
-        removeEleBundle();
-    }, 1000);
+let count = 0;
+const intervalId = setInterval(() => {
+    removeEleBundle();
+    count++;
+    if (count >= 3) {
+        clearInterval(intervalId);
+    }
+}, 1000);
 
 })()
 
