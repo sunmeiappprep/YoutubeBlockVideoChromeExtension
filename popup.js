@@ -1,14 +1,19 @@
 import { getActiveTabURL } from "./utils.js";
- 
+import {getVariableFromChromeStorage} from "./utils.js";
+import {getObjFromLastLoadedKey} from "./utils.js";
+import {retrieveListsFromStorage} from "./utils.js";
+
+
+
 console.log("popup.js is running")
 var loadLoadedListTitle
 var contentScriptIsReady = false;
 
 // Get the HTML element by its id
-function displayWhichListIsLoaded(){
+function displayWhichListIsLoaded(e){
   var outputElement = document.getElementById("title");
     outputElement.textContent = ""
-    outputElement.textContent = loadLoadedListTitle;
+    outputElement.textContent = e;
 }
 
 function setupSubmitButton() {
@@ -44,21 +49,14 @@ function setupSubmitButton() {
   });
 }
 
+
 function fetchAndDisplayFilterWords() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "getLastLoadedListTitle" }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError.message);
-        return;
-     } 
-      if (response && response.obj) {
-        console.log(response,"fetchAndDisplayFilterWords")
-        displayObjectAsList(response.obj);
-      }
-    });
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    let lastLoadObj = await getObjFromLastLoadedKey(); // Assume this function is async and returns a promise
+    displayObjectAsList(lastLoadObj); // Assume this function is defined elsewhere
   });
 }
+
 
 function displayObjectAsList(obj) {
   if (obj.loadLoadedListTitle) {
@@ -130,14 +128,7 @@ function deleteDisplayFilterList() {
 
 function getLastLoadedListTitle() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "getLastLoadedListTitle" }, (response) => {
-      // Use the response to update your list
-      if (response && response.title) {
-        loadLoadedListTitle = response.title
-        displayWhichListIsLoaded(response.title)
-      }
-    });
+    getVariableFromChromeStorage("lastLoadedList").then(e => displayWhichListIsLoaded(e))
   });
 }
 
@@ -152,7 +143,7 @@ function setupDropdownChangeListener() {
     loadList(selectedText);
     loadLoadedListTitle = selectedText
     console.log(loadLoadedListTitle)
-    displayWhichListIsLoaded()
+    displayWhichListIsLoaded(selectedText)
   });
 
 }
@@ -271,13 +262,8 @@ function loadList(dropdownText) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, { action: "loadOneList", value: dropdownText }, (response) => {
-      // Use the response to update your list
-      // console.log(response,"this")
-      console.log("loadOneList", response)
-      if (response && response.list) {
-        displayObjectAsList(response.list)
-      }
     });
+    getVariableFromChromeStorage(dropdownText).then(list => displayObjectAsList(list)) 
   });
 }
 
@@ -285,16 +271,13 @@ function loadList(dropdownText) {
 
 function retrieveLists() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "retrieveAllLists" }, (response) => {
-      if (response && response.allList) {
-        var newArray = response.allList.filter(function (item) {
-          return item !== "lastLoadedList" && item !== "lastLoadedListTitle" && item !== "fetchFromStorage2";
-        });
-        newArray.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-        displayFilterLists(newArray)
-      }
-    });
+    retrieveListsFromStorage().then((list) => {
+      var newArray = list.filter(function (item) {
+        return item !== "lastLoadedList" && item !== "lastLoadedListTitle" && item !== "fetchFromStorage2";
+      });
+      newArray.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      displayFilterLists(newArray)
+    })
   });
 }
 
@@ -384,41 +367,6 @@ function makeRefreshButtonFunction() {
   });
 }
 
-// // Call the function to execute everything inside it
-// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-//   if (request.type === "CONTENT_SCRIPT_READY") {
-//       console.log("Content script has loaded and is ready!");
-
-//       // Perform any tasks that depend on the content script being ready
-//   }
-// });
-
-
-// document.addEventListener('DOMContentLoaded', async () => {
-  
-  
-//   const activeTab = await getActiveTabURL();
-
-//   if (activeTab.url.includes("youtube.com")) {
-    
-//   console.log(activeTab)
-
-//     getLastLoadedListTitle()
-//     initializePopup();
-//     displayWhichListIsLoaded()
-//     retrieveLists()
-//     setupDropdownChangeListener()
-//     makeRefreshButtonFunction()
-//     document.getElementById('importFile').addEventListener('change', handleFileSelect);
-    
-//   } else {
-//     const container = document.getElementsByClassName("container")[0];
-
-//     container.innerHTML = '<div class="title">This is not a youtube video page.</div>';
-    
-//   }
-// });
-
 let run = false
 
 async function runIfDOMIsLoaded() {
@@ -446,31 +394,10 @@ async function runIfDOMIsLoaded() {
 }
 
 
-// Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "myMessage") {
-      // Handle the message
-      console.log("Received:", message.payload);
-      contentScriptIsReady = true
-      // Optionally, send a response back to the content script
-      sendResponse(`Message received in popup, count: ${message.payload.split('count: ')[1]}`);
-  }
+
+
+document.addEventListener('DOMContentLoaded', async () => {
+      runIfDOMIsLoaded(); // If it's not the first time, run the function immediately
 });
-
-let checkInterval = setInterval(() => {
-  // Assuming contentScriptIsReady is a boolean variable you've defined elsewhere
-  if (contentScriptIsReady) {
-    runIfDOMIsLoaded();
-    clearInterval(checkInterval); // Clears the interval to stop checking
-  }
-}, 0); // Checks every 1 second
-
-
-
-// document.addEventListener('DOMContentLoaded', async () => {
-//     if (thumbnailsExistGlobal){
-//       runIfDOMIsLoaded(); // If it's not the first time, run the function immediately
-//     }
-// });
 
 

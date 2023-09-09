@@ -178,7 +178,7 @@ function shouldRemoveTitle(title, filterWords) {
 
 async function removeEleBundle() {
     // console.log("removeEleBundle is running")
-    if (getWindowURL() === "https://www.youtube.com/") {
+    if (getWindowURL() === "https://www.youtube.com/" || getWindowURL().includes("youtube.com/?bp=")) {
         const titleArray = await getItemsfromDOM();
         removeEle(titleArray);
     }
@@ -289,7 +289,8 @@ function handleMessage(message, sender, sendResponse) {
             // addKeyToFilterWordsFun("w2", "nine")
 
             // getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
-            getObjFromLastLoadedKey()
+            // getObjFromLastLoadedKey()
+            getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
             return true;  // Keeps the message channel open for asynchronous response
 
             break;
@@ -302,31 +303,8 @@ function handleMessage(message, sender, sendResponse) {
                 })
                 return true; // This keeps the message channel open for the asynchronous response
             })
-
-        case "getLastLoadedListTitle":
-            getVariableFromChromeStorage("lastLoadedList")
-                .then((result) => {
-                    if (result) {
-                        // console.log(result);
-                        return getVariableFromChromeStorage(result)
-                            .then((obj) => {
-                                return { result, obj };  // Wrap both result and obj into an object
-                            });
-                    } else {
-                        sendResponse({ status: "fail", title: "No List Set" });
-                        return Promise.reject('No List Set');
-                    }
-                })
-                .then(({ result, obj }) => {  // Destructure the object to get result and obj
-                    // console.log(obj);
-                    sendResponse({ status: "success", title: result, obj: obj });
-                })
-                .catch((error) => {
-                    console.error('An error occurred:', error);
-                    // Handle your error appropriately here
-                });
-            return true; // Indicates we will respond asynchronously
-            break;
+            break
+        
         case "deleteWordFromFilterList":
             console.log("deleteWordFromFilterList action triggered");
             removeKeyFromFilterWords(message.listName, message.value, consoleLog);
@@ -439,14 +417,6 @@ var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAn
     });
 
 
-
-    const intervalId2 = setInterval(() => {
-        // Send a message to popup.js
-        chrome.runtime.sendMessage({type: "myMessage", payload: `Hello from content script, count: ${count + 1}`}, (response) => {
-            // Handle the response if needed
-            console.log(response);
-        });
-    }, 1000);  // Change the interval as needed
 
     
 
