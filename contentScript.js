@@ -53,36 +53,7 @@ function consoleLog(value) {
     console.log(value)
 }
 
-async function createList(value) {
 
-    chrome.storage.sync.set({ [value]: {} }, () => {
-        if (chrome.runtime.lastError) {
-            console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
-        } else {
-            console.log(`Empty object "${value}" stored successfully`);
-        }
-    });
-
-    chrome.storage.sync.set({ lastLoadedList: [value] }, () => {
-        if (chrome.runtime.lastError) {
-            console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
-        } else {
-            console.log(`Empty object "${value}" stored successfully`);
-        }
-    });
-
-    try {
-        await storeVariableInChromeStorage("lastLoadedList", value);
-        let resultObj = await getObjFromLastLoadedKey();
-        // console.log(resultObj); // Do something with the object
-
-    } catch (error) {
-        console.error(error);
-    }
-
-
-    // fetchOneListFromStorageFunction([value], setFetchFromStorageFunction)
-}
 
 function importJSON(json, listName, callback) {
     chrome.storage.sync.set({ [listName]: json }, () => {
@@ -266,43 +237,20 @@ function handleMessage(message, sender, sendResponse) {
                 break;
             
         case "testButton":
-            // getVariableFromChromeStorage('fetchFromStorage2')
-            //     .then(data => {
-            //         console.log(data, 'fetchFromStorage2');
-            //         sendResponse({ filterWords: data });  // Sending the data here
-            //     })
-            //     .catch(err => {
-            //         console.log('An error occurred:', err);
-            //         sendResponse({ error: 'An error occurred:' + err });  // Sending error here
-            //     });
-
-            // getVariableFromChromeStorage('lastLoadedListTitle')
-            //     .then(data => {
-            //         console.log(data, 'lastLoadedListTitle');
-            //         sendResponse({ lastLoadedTitle: data });  // Sending the data here
-            //     })
-            //     .catch(err => {
-            //         console.log('An error occurred:', err);
-            //         sendResponse({ error: 'An error occurred:' + err });  // Sending error here
-            //     });
-
-            // addKeyToFilterWordsFun("w2", "nine")
-
-            // getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
-            // getObjFromLastLoadedKey()
+ 
             getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
             return true;  // Keeps the message channel open for asynchronous response
 
             break;
         case "loadOneList":
-            console.log("loadOneList action triggered");
-            storeVariableInChromeStorage("lastLoadedList",value).then(() =>{
-                getVariableFromChromeStorage(value).then((result) => {
-                    console.log(" getVariableFromChromeStorage(value)")
-                    sendResponse({ status: "success", list: result });
-                })
-                return true; // This keeps the message channel open for the asynchronous response
-            })
+            // console.log("loadOneList action triggered");
+            // storeVariableInChromeStorage("lastLoadedList",value).then(() =>{
+            //     getVariableFromChromeStorage(value).then((result) => {
+            //         console.log(" getVariableFromChromeStorage(value)")
+            //         sendResponse({ status: "success", list: result });
+            //     })
+            //     return true; // This keeps the message channel open for the asynchronous response
+            // })
             break
         
         case "deleteWordFromFilterList":
