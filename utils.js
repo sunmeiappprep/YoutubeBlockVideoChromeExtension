@@ -36,3 +36,70 @@ export function retrieveListsFromStorage() {
       });
   });
 }
+
+export function storeVariableInChromeStorage(variableName, value) {
+  return new Promise((resolve, reject) => {
+      chrome.storage.sync.set({ [variableName]: value }, () => {
+          if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+          } else {
+              resolve(`Stored ${variableName}`);
+          }
+      });
+  });
+}
+
+export function addKeyToFilterWordsFun(listName, value) {
+  getVariableFromChromeStorage([listName])
+      .then((result) => {
+          if (result) {
+              result[value] = true;
+              return result;
+          }
+          return result; // Return the original result if value is not provided
+      })
+      .then((updatedResult) => {
+          storeVariableInChromeStorage([listName],updatedResult)
+      });
+}
+
+
+export async function createList(value) {
+
+  chrome.storage.sync.set({ [value]: {} }, () => {
+      if (chrome.runtime.lastError) {
+          console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+      } else {
+          console.log(`Empty object "${value}" stored successfully`);
+      }
+  });
+
+  chrome.storage.sync.set({ lastLoadedList: [value] }, () => {
+      if (chrome.runtime.lastError) {
+          console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+      } else {
+          console.log(`Empty object "${value}" stored successfully`);
+      }
+  });
+
+  try {
+      await storeVariableInChromeStorage("lastLoadedList", value);
+
+  } catch (error) {
+      console.error(error);
+  }
+
+}
+
+export function deleteList(listName) {
+  return new Promise((resolve, reject) => {
+      chrome.storage.sync.remove([listName], () => {
+          if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError));
+          } else {
+              resolve('Item removed successfully');
+              storeVariableInChromeStorage("lastLoadedList","No List Loaded")
+          }
+      });
+  });
+}
