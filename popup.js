@@ -30,10 +30,7 @@ function setupSubmitButton() {
         addKeyToFilterWordsFun(listName, inputValue)
       })
       // console.log(response);
-      setTimeout(() => {
         fetchAndDisplayFilterWords()
-      }, 500);
-
     });
   }
 

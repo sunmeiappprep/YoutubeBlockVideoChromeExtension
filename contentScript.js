@@ -126,10 +126,13 @@ function handleMessage(message, sender, sendResponse) {
             getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
             return true;  // Keeps the message channel open for asynchronous response
             break;
+        case "some_message":
+            getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
+            return true;  // Keeps the message channel open for asynchronous response
+            break;
         default:
-            console.log("Default case reached: no condition is met");
-            sendResponse({ status: "no condition is met" });
-            removeEleBundle()
+            console.log("default condition")
+            removeEleBundle();
             break
     }
 }
@@ -170,7 +173,7 @@ function CheckIfBottomReachedAndExecuteKey(event) {
 var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 500);
 var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 500);
 
-(() => {
+function mainProgram() {
     getVariableFromChromeStorage("lastLoadedList")
         .then(value => {
             if (value === undefined) {
@@ -190,15 +193,22 @@ var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAn
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
     window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
 
+
     // Timeout to remove elements
     let count = 0;
     const intervalId = setInterval(() => {
         removeEleBundle();
         count++;
-        if (count >= 20) {
+        if (count >= 10) {
             clearInterval(intervalId);
         }
     }, 250);
+}
+
+(() => {
+
+    mainProgram()
+
 
 })()
 
