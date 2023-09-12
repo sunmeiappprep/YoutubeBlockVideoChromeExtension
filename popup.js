@@ -11,10 +11,6 @@ import { importJSON } from "./utils.js";
 
 
 
-console.log("popup.js is running")
-var loadLoadedListTitle
-var contentScriptIsReady = false;
-
 // Get the HTML element by its id
 function displayWhichListIsLoaded(e) {
   var outputElement = document.getElementById("title");
@@ -30,16 +26,15 @@ function setupSubmitButton() {
     const inputValue = inputElement.value;
     // Send a message to contentScript.js with the input value
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-        getVariableFromChromeStorage("lastLoadedList").then((listName) => 
-        {
-          addKeyToFilterWordsFun(listName,inputValue)
-        })
-        // console.log(response);
-        setTimeout(() => {
-          fetchAndDisplayFilterWords()
-        }, 500);
+      getVariableFromChromeStorage("lastLoadedList").then((listName) => {
+        addKeyToFilterWordsFun(listName, inputValue)
+      })
+      // console.log(response);
+      setTimeout(() => {
+        fetchAndDisplayFilterWords()
+      }, 500);
 
-      });
+    });
   }
 
   // Add the existing click listener to the submit button
@@ -82,7 +77,6 @@ function displayObjectAsList(obj) {
 
       // Optional: Add an event listener to the button
       button.addEventListener("click", () => {
-        // console.log("Button clicked for", key);
         sendRemoveMessage(key)
       });
 
@@ -141,23 +135,22 @@ function setupDropdownChangeListener() {
   dropdown.addEventListener('change', function () {
     const selectedText = dropdown.selectedOptions[0].text;
     loadList(selectedText);
-    loadLoadedListTitle = selectedText
-    console.log(loadLoadedListTitle)
     displayWhichListIsLoaded(selectedText)
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      let activeTab = tabs[0]
+      refreshYoutube(activeTab.id)
+    })
   });
 
 }
 
 
 function sendRemoveMessage(key) {
-  // console.log("I am in sendREmove", key);
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     getVariableFromChromeStorage("lastLoadedList")
-    .then(listName => removeKeyFromFilterWords(listName,key))
-      setTimeout(() => {
-        fetchAndDisplayFilterWords()
-      }, 500);
-    });
+      .then(listName => removeKeyFromFilterWords(listName, key))
+      .then(() => fetchAndDisplayFilterWords())
+  });
 }
 
 function refreshYoutube(id) {
@@ -166,34 +159,34 @@ function refreshYoutube(id) {
 
 function exportWords() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        getObjFromLastLoadedKey().then(obj => {
-          const jsonStr = JSON.stringify(obj, null, 2); // Indented with 2 spaces
+    getObjFromLastLoadedKey().then(obj => {
+      const jsonStr = JSON.stringify(obj, null, 2); // Indented with 2 spaces
 
-          // Creating a blob with the JSON string and setting its MIME type as application/json
-          const blob = new Blob([jsonStr], { type: 'application/json' });
-  
-          // Creating an object URL for the blob
-          const url = URL.createObjectURL(blob);
-  
-          // Creating an anchor element to trigger the download
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'words.json'; // The filename for the download
-          a.style.display = 'none';
-  
-          document.body.appendChild(a);
-          a.click(); // This will start the download
-  
-          // Cleanup: Revoke the object URL and remove the anchor element
-          URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }).catch((error) => {
-          console.error("Error:", error);
-        });
-      
+      // Creating a blob with the JSON string and setting its MIME type as application/json
+      const blob = new Blob([jsonStr], { type: 'application/json' });
 
-        // Stringifying the object to turn it into a JSON string
-        
+      // Creating an object URL for the blob
+      const url = URL.createObjectURL(blob);
+
+      // Creating an anchor element to trigger the download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'words.json'; // The filename for the download
+      a.style.display = 'none';
+
+      document.body.appendChild(a);
+      a.click(); // This will start the download
+
+      // Cleanup: Revoke the object URL and remove the anchor element
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }).catch((error) => {
+      console.error("Error:", error);
+    });
+
+
+    // Stringifying the object to turn it into a JSON string
+
   });
 }
 
@@ -220,15 +213,15 @@ function processImportedData(value) {
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
     getVariableFromChromeStorage("lastLoadedList")
-    .then((listName) => {
-      importJSON(value, listName)
-    })
-    // Send a message to the content script in the active tab
-      // Do something with the response
-      getObjFromLastLoadedKey().then(obj => {
-        displayObjectAsList(obj)
+      .then((listName) => {
+        importJSON(value, listName)
       })
-    });
+    // Send a message to the content script in the active tab
+    // Do something with the response
+    getObjFromLastLoadedKey().then(obj => {
+      displayObjectAsList(obj)
+    })
+  });
 }
 
 function createListFun() {
@@ -241,7 +234,6 @@ function createListFun() {
     cleanupDisplayList()
     // Send a message to the content script in the active tab
 
-    loadLoadedListTitle = filterListNameInput.value
   });
 }
 
@@ -253,12 +245,12 @@ function cleanupDisplayList() {
 }
 
 function loadList(dropdownText) {
-  // console.log(dropdownText)
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     storeVariableInChromeStorage("lastLoadedList", dropdownText)
       .then(() => {
-        getVariableFromChromeStorage(dropdownText).then(list => displayObjectAsList(list))
+        getVariableFromChromeStorage(dropdownText)
+          .then((list) => displayObjectAsList(list))
       })
   });
 }
@@ -280,22 +272,21 @@ function retrieveLists() {
 function deleteListButtonFunction() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     getVariableFromChromeStorage("lastLoadedList")
-    .then(listName => deleteList(listName)
-    .then(() => retrieveLists())
-    .then(() => cleanupDisplayList())
-    .then(() => {
-      let empty = {}
-      displayObjectAsList(empty)
-    }))
+      .then(listName => deleteList(listName)
+        .then(() => retrieveLists())
+        .then(() => cleanupDisplayList())
+        .then(() => {
+          let empty = {}
+          displayObjectAsList(empty)
+        }))
     displayWhichListIsLoaded("No List Loaded")
-    });
+  });
 }
 
 async function testButtonSendsMessage() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, { action: "testButton" }, (response) => {
-      console.log("test button clicked");
       if (response) {
         console.log(response, "testing Button");
       }
@@ -332,11 +323,9 @@ function initializePopup() {
     currentTabUrl = currentTab.url;
 
     if (currentTabUrl && currentTabUrl.includes('youtube.com')) {
-      // console.log("Current tab is a YouTube page:", currentTabUrl);
       setupSubmitButton();
       fetchAndDisplayFilterWords();
     } else {
-      // console.log("Current tab is not a YouTube page:", currentTabUrl);
     }
 
   });
@@ -351,10 +340,10 @@ function makeRefreshButtonFunction() {
     currentTabUrl = currentTab.url;
 
 
-    const refreshButton = document.getElementById("refreshButton");
-    refreshButton.addEventListener("click", function () {
-      refreshYoutube(currentTab.id);
-    });
+    // const refreshButton = document.getElementById("refreshButton");
+    // refreshButton.addEventListener("click", function () {
+    //   refreshYoutube(currentTab.id);
+    // });
   });
 }
 
@@ -364,7 +353,6 @@ async function runIfDOMIsLoaded() {
   const activeTab = await getActiveTabURL();
 
   if (activeTab && activeTab.url && activeTab.url.includes("youtube.com")) {
-    console.log(activeTab);
 
     try {
       getLastLoadedListTitle();
