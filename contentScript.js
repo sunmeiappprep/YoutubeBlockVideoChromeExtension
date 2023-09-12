@@ -1,6 +1,3 @@
-
-console.log("CS is running")
-
 function storeVariableInChromeStorage(variableName, value) {
     return new Promise((resolve, reject) => {
         chrome.storage.sync.set({ [variableName]: value }, () => {
@@ -39,32 +36,32 @@ function getVariableFromChromeStorage(variableName) {
 
 
 
-function fetchOneListFromStorageFunction(listName, callback) {
-    chrome.storage.sync.get([listName], result => {
-        if (callback) {
-            callback(result) // Call the setFunction with the retrieved value
-        }
-    });
-}
+// function fetchOneListFromStorageFunction(listName, callback) {
+//     chrome.storage.sync.get([listName], result => {
+//         if (callback) {
+//             callback(result) // Call the setFunction with the retrieved value
+//         }
+//     });
+// }
 
 
 
-function consoleLog(value) {
-    console.log(value)
-}
+// function consoleLog(value) {
+//     console.log(value)
+// }
 
 
 
-function importJSON(json, listName, callback) {
-    chrome.storage.sync.set({ [listName]: json }, () => {
-        if (chrome.runtime.lastError) {
-            console.error(`Error storing the object "${listName}":`, chrome.runtime.lastError);
-        } else {
-            console.log(`Object "${listName}" stored successfully`);
-        }
-    });
+// function importJSON(json, listName, callback) {
+//     chrome.storage.sync.set({ [listName]: json }, () => {
+//         if (chrome.runtime.lastError) {
+//             console.error(`Error storing the object "${listName}":`, chrome.runtime.lastError);
+//         } else {
+//             console.log(`Object "${listName}" stored successfully`);
+//         }
+//     });
 
-}
+// }
 
 function createDefault () {
     createList("lastLoadedList");
@@ -161,36 +158,36 @@ function getWindowURL() {
 }
 
 
-function addKeyToFilterWordsFun(listName, value) {
-    getVariableFromChromeStorage([listName])
-        .then((result) => {
-            if (value) {
-                result[value] = true;
-                let updateObject = {};
-                updateObject[listName] = result;
-                return updateObject; // Return the updateObject
-            }
-            return result; // Return the original result if value is not provided
-        })
-        .then((updatedResult) => {
-            storeVariableInChromeStorageAsOneObj(updatedResult)
-        });
-    // getLastLoadListTitle(getLastLoadedListAndSet, consoleLog);
-}
+// function addKeyToFilterWordsFun(listName, value) {
+//     getVariableFromChromeStorage([listName])
+//         .then((result) => {
+//             if (value) {
+//                 result[value] = true;
+//                 let updateObject = {};
+//                 updateObject[listName] = result;
+//                 return updateObject; // Return the updateObject
+//             }
+//             return result; // Return the original result if value is not provided
+//         })
+//         .then((updatedResult) => {
+//             storeVariableInChromeStorageAsOneObj(updatedResult)
+//         });
+//     // getLastLoadListTitle(getLastLoadedListAndSet, consoleLog);
+// }
 
 
-function deleteList(listName) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.sync.remove([listName], () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError));
-            } else {
-                resolve('Item removed successfully');
-                storeVariableInChromeStorage("lastLoadedList","No List Loaded")
-            }
-        });
-    });
-}
+// function deleteList(listName) {
+//     return new Promise((resolve, reject) => {
+//         chrome.storage.sync.remove([listName], () => {
+//             if (chrome.runtime.lastError) {
+//                 reject(new Error(chrome.runtime.lastError));
+//             } else {
+//                 resolve('Item removed successfully');
+//                 storeVariableInChromeStorage("lastLoadedList","No List Loaded")
+//             }
+//         });
+//     });
+// }
 
 
 
@@ -288,21 +285,21 @@ function handleMessage(message, sender, sendResponse) {
 
 
 
-async function testing() {
-    const tabButton = await getCurrentTab();
-    console.log("Value of tabButton:", tabButton); // Log the value of tabButton
-}
+// async function testing() {
+//     const tabButton = await getCurrentTab();
+//     console.log("Value of tabButton:", tabButton); // Log the value of tabButton
+// }
 
-function removeKeyFromFilterWords(listName, value, callback) {
-    getVariableFromChromeStorage(listName).then(result =>{
-        console.log(result)
-        if(result){
-            delete result[value]
-            console.log(result)
-            return result
-        }
-    }).then(updateObject => storeVariableInChromeStorage(listName,updateObject))
-}
+// function removeKeyFromFilterWords(listName, value, callback) {
+//     getVariableFromChromeStorage(listName).then(result =>{
+//         console.log(result)
+//         if(result){
+//             delete result[value]
+//             console.log(result)
+//             return result
+//         }
+//     }).then(updateObject => storeVariableInChromeStorage(listName,updateObject))
+// }
 
 
 
@@ -326,16 +323,16 @@ function checkIfBottomReachedAndExecuteScroll() {
 }
 
 
-function retrieveListsFromStorage() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(null, results => {
-            // console.log(results, "renderAllList ()");
-            const listKeysArray = Object.keys(results);
-            // console.log(results,"from retrieveListsFromStorage")
-            resolve(listKeysArray);
-        });
-    });
-}
+// function retrieveListsFromStorage() {
+//     return new Promise((resolve) => {
+//         chrome.storage.sync.get(null, results => {
+//             // console.log(results, "renderAllList ()");
+//             const listKeysArray = Object.keys(results);
+//             // console.log(results,"from retrieveListsFromStorage")
+//             resolve(listKeysArray);
+//         });
+//     });
+// }
 
 
 function CheckIfBottomReachedAndExecuteKey(event) {

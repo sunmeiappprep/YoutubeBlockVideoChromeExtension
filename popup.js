@@ -6,6 +6,8 @@ import { storeVariableInChromeStorage } from "./utils.js";
 import { addKeyToFilterWordsFun } from "./utils.js";
 import { createList } from "./utils.js";
 import { deleteList } from "./utils.js";
+import { removeKeyFromFilterWords } from "./utils.js";
+import { importJSON } from "./utils.js";
 
 
 
@@ -54,8 +56,7 @@ function setupSubmitButton() {
 
 function fetchAndDisplayFilterWords() {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    let lastLoadObj = await getObjFromLastLoadedKey(); // Assume this function is async and returns a promise
-    displayObjectAsList(lastLoadObj); // Assume this function is defined elsewhere
+    getVariableFromChromeStorage("lastLoadedList").then(e => loadList(e)) // Assume this function is async and returns a promise
   });
 }
 
@@ -151,13 +152,12 @@ function setupDropdownChangeListener() {
 function sendRemoveMessage(key) {
   // console.log("I am in sendREmove", key);
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: "deleteWordFromFilterList", value: key, listName: loadLoadedListTitle }, (response) => {
-      // console.log(response.status);
+    getVariableFromChromeStorage("lastLoadedList")
+    .then(listName => removeKeyFromFilterWords(listName,key))
       setTimeout(() => {
         fetchAndDisplayFilterWords()
       }, 500);
     });
-  });
 }
 
 function refreshYoutube(id) {
@@ -166,35 +166,34 @@ function refreshYoutube(id) {
 
 function exportWords() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, { action: "exportWords" }, (response) => {
-      console.log(response, "exportWords")
-      if (response && response.filterWords) {
-        console.log(response)
+        getObjFromLastLoadedKey().then(obj => {
+          const jsonStr = JSON.stringify(obj, null, 2); // Indented with 2 spaces
+
+          // Creating a blob with the JSON string and setting its MIME type as application/json
+          const blob = new Blob([jsonStr], { type: 'application/json' });
+  
+          // Creating an object URL for the blob
+          const url = URL.createObjectURL(blob);
+  
+          // Creating an anchor element to trigger the download
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'words.json'; // The filename for the download
+          a.style.display = 'none';
+  
+          document.body.appendChild(a);
+          a.click(); // This will start the download
+  
+          // Cleanup: Revoke the object URL and remove the anchor element
+          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }).catch((error) => {
+          console.error("Error:", error);
+        });
+      
 
         // Stringifying the object to turn it into a JSON string
-        const jsonStr = JSON.stringify(response.filterWords, null, 2); // Indented with 2 spaces
-
-        // Creating a blob with the JSON string and setting its MIME type as application/json
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-
-        // Creating an object URL for the blob
-        const url = URL.createObjectURL(blob);
-
-        // Creating an anchor element to trigger the download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'words.json'; // The filename for the download
-        a.style.display = 'none';
-
-        document.body.appendChild(a);
-        a.click(); // This will start the download
-
-        // Cleanup: Revoke the object URL and remove the anchor element
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-    });
+        
   });
 }
 
@@ -217,18 +216,19 @@ function handleFileSelect(event) {
   }
 }
 
-function processImportedData(value, listName) {
-  console.log("data run")
+function processImportedData(value) {
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
-
+    getVariableFromChromeStorage("lastLoadedList")
+    .then((listName) => {
+      importJSON(value, listName)
+    })
     // Send a message to the content script in the active tab
-    chrome.tabs.sendMessage(activeTab.id, { action: "importJSON", value: value, listName: loadLoadedListTitle }, function (response) {
       // Do something with the response
-      console.log(response, "import");
-      displayObjectAsList(response.words)
+      getObjFromLastLoadedKey().then(obj => {
+        displayObjectAsList(obj)
+      })
     });
-  });
 }
 
 function createListFun() {
@@ -369,7 +369,6 @@ async function runIfDOMIsLoaded() {
     try {
       getLastLoadedListTitle();
       initializePopup();
-      displayWhichListIsLoaded();
       retrieveLists();
       setupDropdownChangeListener();
       makeRefreshButtonFunction();
