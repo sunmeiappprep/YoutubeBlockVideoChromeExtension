@@ -103,3 +103,26 @@ export function deleteList(listName) {
       });
   });
 }
+
+export function removeKeyFromFilterWords(listName, value, callback) {
+  getVariableFromChromeStorage(listName).then(result =>{
+      console.log(result)
+      if(result){
+          delete result[value]
+          console.log(result)
+          return result
+      }
+  }).then(updateObject => storeVariableInChromeStorage(listName,updateObject))
+}
+
+
+export function importJSON(json, listName, callback) {
+  chrome.storage.sync.set({ [listName]: json }, () => {
+      if (chrome.runtime.lastError) {
+          console.error(`Error storing the object "${listName}":`, chrome.runtime.lastError);
+      } else {
+          console.log(`Object "${listName}" stored successfully`);
+      }
+  });
+
+}
