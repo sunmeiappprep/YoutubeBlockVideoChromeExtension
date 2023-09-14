@@ -1,128 +1,164 @@
 export async function getActiveTabURL() {
-    let queryOptions = { active: true, lastFocusedWindow: true };
-    // `tab` will either be a `tabs.Tab` instance or `undefined`.
-    let [tab] = await chrome.tabs.query(queryOptions);
-    return tab;
-  }
-  
+  let queryOptions = { active: true, lastFocusedWindow: true };
+  // `tab` will either be a `tabs.Tab` instance or `undefined`.
+  let [tab] = await chrome.tabs.query(queryOptions);
+  return tab;
+}
+
 export function getVariableFromChromeStorage(variableName) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.sync.get(variableName, (result) => {
-            if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError);
-            } else {
-                resolve(result[variableName]);
-            }
-        });
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(variableName, (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result[variableName]);
+      }
     });
+  });
 }
 
 export async function getObjFromLastLoadedKey() {
   const result = await getVariableFromChromeStorage("lastLoadedList");
   if (result) {
-      const obj = await getVariableFromChromeStorage(result);
-      return obj;
+    const obj = await getVariableFromChromeStorage(result);
+    return obj;
   }
 }
 
 
 export function retrieveListsFromStorage() {
   return new Promise((resolve) => {
-      chrome.storage.sync.get(null, results => {
-          // console.log(results, "renderAllList ()");
-          const listKeysArray = Object.keys(results);
-          // console.log(results,"from retrieveListsFromStorage")
-          resolve(listKeysArray);
-      });
+    chrome.storage.sync.get(null, results => {
+      // console.log(results, "renderAllList ()");
+      const listKeysArray = Object.keys(results);
+      // console.log(results,"from retrieveListsFromStorage")
+      resolve(listKeysArray);
+    });
   });
 }
 
 export function storeVariableInChromeStorage(variableName, value) {
   return new Promise((resolve, reject) => {
-      chrome.storage.sync.set({ [variableName]: value }, () => {
-          if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
-          } else {
-              resolve(`Stored ${variableName}`);
-          }
-      });
+    chrome.storage.sync.set({ [variableName]: value }, () => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(`Stored ${variableName}`);
+      }
+    });
   });
 }
 
 export function addKeyToFilterWordsFun(listName, value) {
   getVariableFromChromeStorage([listName])
-      .then((result) => {
-          if (result) {
-              result[value] = true;
-              return result;
-          }
-          return result; // Return the original result if value is not provided
-      })
-      .then((updatedResult) => {
-          storeVariableInChromeStorage([listName],updatedResult)
+    .then((result) => {
+      if (result) {
+        result[value] = true;
+        return result;
+      }
+      return result; // Return the original result if value is not provided
+    })
+    .then((updatedResult) => {
+      storeVariableInChromeStorage([listName], updatedResult)
+    }).then(() => {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "refresh" }, function (response) {
+          // console.log(response);
+        });
       });
+    });
+  // background.js
 }
+
+export function addKeyToFilterWordsFunIncludeInAny(listName, value) {
+  getVariableFromChromeStorage([listName])
+    .then((result) => {
+      if (result) {
+        result[value] = "matchPartial";
+        return result;
+      }
+      return result; // Return the original result if value is not provided
+    })
+    .then((updatedResult) => {
+      storeVariableInChromeStorage([listName], updatedResult)
+    }).then(() => {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "refresh" }, function (response) {
+          // console.log(response);
+        });
+      });
+    });
+  // background.js
+}
+
 
 
 export async function createList(value) {
 
   chrome.storage.sync.set({ [value]: {} }, () => {
-      if (chrome.runtime.lastError) {
-          console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
-      } else {
-          console.log(`Empty object "${value}" stored successfully`);
-      }
+    if (chrome.runtime.lastError) {
+      console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+    } else {
+      console.log(`Empty object "${value}" stored successfully`);
+    }
   });
 
   chrome.storage.sync.set({ lastLoadedList: [value] }, () => {
-      if (chrome.runtime.lastError) {
-          console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
-      } else {
-          console.log(`Empty object "${value}" stored successfully`);
-      }
+    if (chrome.runtime.lastError) {
+      console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+    } else {
+      console.log(`Empty object "${value}" stored successfully`);
+    }
   });
 
   try {
-      await storeVariableInChromeStorage("lastLoadedList", value);
+    await storeVariableInChromeStorage("lastLoadedList", value);
 
   } catch (error) {
-      console.error(error);
+    console.error(error);
   }
 
 }
 
 export function deleteList(listName) {
   return new Promise((resolve, reject) => {
-      chrome.storage.sync.remove([listName], () => {
-          if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError));
-          } else {
-              resolve('Item removed successfully');
-              storeVariableInChromeStorage("lastLoadedList","No List Loaded")
-          }
-      });
+    chrome.storage.sync.remove([listName], () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError));
+      } else {
+        resolve('Item removed successfully');
+        storeVariableInChromeStorage("lastLoadedList", "No List Loaded")
+      }
+    });
   });
 }
 
 export function removeKeyFromFilterWords(listName, value, callback) {
-  getVariableFromChromeStorage(listName).then(result =>{
-      console.log(result)
-      if(result){
-          delete result[value]
-          console.log(result)
-          return result
-      }
-  }).then(updateObject => storeVariableInChromeStorage(listName,updateObject))
+  getVariableFromChromeStorage(listName).then(result => {
+    if (result) {
+      delete result[value]
+      return result
+    }
+  })
+  .then(updateObject => storeVariableInChromeStorage(listName, updateObject))
+  .then(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "removeHiddenThumbnailsByFilterWord", value:value, listName:listName }, function (response) {
+        console.log(response);
+      });
+    });
+  })
 }
 
 
 export function importJSON(json, listName, callback) {
   chrome.storage.sync.set({ [listName]: json }, () => {
-      if (chrome.runtime.lastError) {
-          console.error(`Error storing the object "${listName}":`, chrome.runtime.lastError);
-      } else {
-          console.log(`Object "${listName}" stored successfully`);
-      }
+    if (chrome.runtime.lastError) {
+      console.error(`Error storing the object "${listName}":`, chrome.runtime.lastError);
+    } else {
+      console.log(`Object "${listName}" stored successfully`);
+    }
   });
 
 }
+
