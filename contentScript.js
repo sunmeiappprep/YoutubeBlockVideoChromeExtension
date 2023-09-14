@@ -23,13 +23,39 @@ function getVariableFromChromeStorage(variableName) {
     });
 }
 
+async function createList(value) {
+
+    chrome.storage.sync.set({ [value]: {} }, () => {
+        if (chrome.runtime.lastError) {
+            console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+        } else {
+            console.log(`Empty object "${value}" stored successfully`);
+        }
+    });
+
+    chrome.storage.sync.set({ lastLoadedList: [value] }, () => {
+        if (chrome.runtime.lastError) {
+            console.error(`Error storing the empty object "${value}":`, chrome.runtime.lastError);
+        } else {
+            console.log(`Empty object "${value}" stored successfully`);
+        }
+    });
+
+    try {
+        await storeVariableInChromeStorage("lastLoadedList", value);
+
+    } catch (error) {
+        console.error(error);
+    }
+    removeHiddenThumbnails()
+}
+
 
 function createDefault() {
-    createList("lastLoadedList");
-    createList("lastLoadedListTitle");
-    createList("fetchFromStorage2");
-    createList("asd");
+    createList("lastLoadedList").then(() => storeVariableInChromeStorage("lastLoadedList", ""));
+    createList("Default")
 }
+
 
 function isBottomReached() {
     // Calculate how far the user has scrolled down
@@ -42,6 +68,7 @@ function isBottomReached() {
     // Check if the user has scrolled close to the bottom
     return scrollY + viewportHeight >= pageHeight - pageHeight * .5; // Adjust the threshold as needed
 }
+
 
 function getItemsfromDOM() {
     return new Promise((resolve, reject) => {
@@ -57,15 +84,7 @@ function getItemsfromDOM() {
 
 
 async function removeEle(titleArray) {
-    let resultObj
-    try {
-        resultObj = await getObjFromLastLoadedKey();
-        // console.log(resultObj); // Do something with the object
-
-    } catch (error) {
-        console.error(error);
-    }
-
+    let resultObj = await getObjFromLastLoadedKey();
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let titleLink = titleArray[i][1];
@@ -88,6 +107,40 @@ async function getObjFromLastLoadedKey() {
     }
 }
 
+async function removeHiddenThumbnails() {
+    const titleArray = await getItemsfromDOM();
+    for (let i = 0; i < titleArray.length; i++) {
+        let ele = titleArray[i][0];
+        let titleLink = titleArray[i][1];
+        if (titleLink) {
+            ele.classList.remove('hidden');
+        }
+    }
+}
+
+
+
+async function removeHiddenThumbnailsByFilterWord(filterWord,listName) {
+    console.log(listName,"listname");
+    const titleArray = await getItemsfromDOM();
+    for (let i = 0; i < titleArray.length; i++) {
+        let ele = titleArray[i][0];
+        let titleLink = titleArray[i][1];
+        let objectLastLoad = await getVariableFromChromeStorage([listName])
+        let objectLastLoad2 = await getVariableFromChromeStorage(listName)
+        console.log(objectLastLoad)
+        console.log(objectLastLoad2)
+        if (titleLink) {
+            let title = titleArray[i][1].getAttribute("title").toLowerCase();
+            if (shouldRemoveTitle(title, filterWord)) {
+                ele.classList.remove('hidden');
+            }
+        }
+    }
+}
+
+
+
 
 function shouldRemoveTitle(title, filterWords) {
     if (!title || !filterWords) {
@@ -97,11 +150,38 @@ function shouldRemoveTitle(title, filterWords) {
     const lowerCaseTitle = title.toLowerCase();
 
     // Convert filter words to lowercase
-    const lowerCaseFilterWords = Object.keys(filterWords).map(word => word.toLowerCase());
+    // const lowerCaseFilterWords = Object.keys(filterWords).map(word => word.toLowerCase());
 
-    return lowerCaseFilterWords.some(word => lowerCaseTitle.includes(word));
+    const trueKeys = [];
+    const matchPartialKeys = [];
+
+    Object.keys(filterWords).forEach(key => {
+        if (filterWords[key] === true) {
+          trueKeys.push(key.toLowerCase());
+        } else if (filterWords[key] === "matchPartial") {
+          matchPartialKeys.push(key.toLowerCase());
+        }
+      });
+
+
+    if (trueKeys.some(word => lowerCaseTitle.includes(word))) {
+        title = cleanString(title)
+        console.log(title)
+        let lowerCaseTitlesplit = title.split(" ")
+        return trueKeys.some(word => lowerCaseTitlesplit.includes(word))
+    };
+
+    if (matchPartialKeys.some(word => lowerCaseTitle.includes(word))) {
+        return matchPartialKeys.some(word => lowerCaseTitle.includes(word))
+    };
+
+    return false
 }
 
+
+function cleanString(str) {
+    return str.replace(/[^\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af\u0410-\u044F\u0391-\u03CE\u0600-\u06FF\u0900-\u097F\u00C0-\u00FFa-zA-Z0-9 ]/g, " ").trim();
+  }
 
 async function removeEleBundle() {
     // console.log("removeEleBundle is running")
@@ -113,6 +193,7 @@ async function removeEleBundle() {
 
 }
 
+
 function getWindowURL() {
     return window.location.href
 }
@@ -123,21 +204,45 @@ function handleMessage(message, sender, sendResponse) {
     // console.log(message, sender, sendResponse)
     switch (action) {
         case "testButton":
-            getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
+            removeHiddenThumbnails()
+            // Remove the event listeners
+            window.removeEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
+            window.removeEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
+            sendResponse({ response: "success" });
             return true;  // Keeps the message channel open for asynchronous response
             break;
         case "some_message":
             getVariableFromChromeStorage("lastLoadedList").then(e => console.log(e))
+            sendResponse({ response: "success" });
             return true;  // Keeps the message channel open for asynchronous response
             break;
+        case "unhideThumbnails":
+            removeHiddenThumbnails()
+            sendResponse({ response: "success" });
+            return true;  // Keeps the message channel open for asynchronous response
+            break;
+        case "refresh":
+            removeEleBundle();
+            sendResponse({ response: "success" });
+            return true;  // Keeps the message channel open for asynchronous response
+            break;
+        case "removeHiddenThumbnailsByFilterWord":
+            console.log(value,listName,"removeHiddenThumbnailsByFilterWord")
+            removeHiddenThumbnailsByFilterWord(value,listName)
+            sendResponse({ response: "success" });
+            return true;  // Keeps the message channel open for asynchronous response
+        case "UnhideThumbnailAndRunEleBundle":
+            console.log("UnhideThumbnailAndRunEleBundle")
+            removeHiddenThumbnails().then(() => setTimeout(() => {
+                removeEleBundle();
+              }, 1000));
+            sendResponse({ response: "success" });
+            return true;  // Keeps the message channel open for asynchronous response
         default:
             console.log("default condition")
-            removeEleBundle();
             break
     }
 }
-
-
 
 
 function throttle(func, limit) {
@@ -152,13 +257,12 @@ function throttle(func, limit) {
     };
 }
 
+
 function checkIfBottomReachedAndExecuteScroll() {
     if (isBottomReached()) {
         removeEleBundle();
     }
 }
-
-
 
 
 function CheckIfBottomReachedAndExecuteKey(event) {
@@ -170,14 +274,15 @@ function CheckIfBottomReachedAndExecuteKey(event) {
 }
 
 
-var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 500);
-var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 500);
+var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 100);
+var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 100);
 
 function mainProgram() {
     getVariableFromChromeStorage("lastLoadedList")
         .then(value => {
             if (value === undefined) {
                 createDefault()
+                .then(() => storeVariableInChromeStorage("lastLoadedList", "Default"))
                 console.log("The variable does not exist in storage.");
             } else {
                 console.log("The variable exists, and its value is:", value);
@@ -204,6 +309,7 @@ function mainProgram() {
         }
     }, 250);
 }
+
 
 (() => {
 

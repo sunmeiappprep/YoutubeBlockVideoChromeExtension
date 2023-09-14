@@ -8,6 +8,7 @@ import { createList } from "./utils.js";
 import { deleteList } from "./utils.js";
 import { removeKeyFromFilterWords } from "./utils.js";
 import { importJSON } from "./utils.js";
+import { addKeyToFilterWordsFunIncludeInAny } from "./utils.js";
 
 
 
@@ -21,6 +22,7 @@ function displayWhichListIsLoaded(e) {
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
   const submitButton = document.getElementById("submitButton");
+  const submitButtonIncludeInAny = document.getElementById("submitButtonIncludeInAny");
 
   function submitAction() {
     const inputValue = inputElement.value;
@@ -34,8 +36,21 @@ function setupSubmitButton() {
     });
   }
 
+  function submitActionIncludeInAny() {
+    const inputValue = inputElement.value;
+    // Send a message to contentScript.js with the input value
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      getVariableFromChromeStorage("lastLoadedList").then((listName) => {
+        addKeyToFilterWordsFunIncludeInAny(listName, inputValue)
+      })
+      // console.log(response);
+        fetchAndDisplayFilterWords()
+    });
+  }
+
   // Add the existing click listener to the submit button
   submitButton.addEventListener("click", submitAction);
+  submitButtonIncludeInAny.addEventListener("click", submitActionIncludeInAny);
 
   // Add a keyup listener to the input element to listen for the Enter key
   inputElement.addEventListener("keyup", event => {
@@ -133,10 +148,20 @@ function setupDropdownChangeListener() {
     const selectedText = dropdown.selectedOptions[0].text;
     loadList(selectedText);
     displayWhichListIsLoaded(selectedText)
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      let activeTab = tabs[0]
-      refreshYoutube(activeTab.id)
-    })
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs.length === 0) {
+        console.error("No active tab found.");
+        return;
+      }
+      
+      chrome.tabs.sendMessage(tabs[0].id, { action: "UnhideThumbnailAndRunEleBundle" }, function (response) {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+          return;
+        }
+        console.log(response);
+      });
+    });
   });
 
 }
@@ -177,6 +202,7 @@ function exportWords() {
       // Cleanup: Revoke the object URL and remove the anchor element
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
     }).catch((error) => {
       console.error("Error:", error);
     });
@@ -218,6 +244,13 @@ function processImportedData(value) {
     getObjFromLastLoadedKey().then(obj => {
       displayObjectAsList(obj)
     })
+
+    
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      let activeTab = tabs[0]
+      refreshYoutube(activeTab.id)
+    })
+
   });
 }
 
@@ -227,10 +260,26 @@ function createListFun() {
     const activeTab = tabs[0];
     let value = filterListNameInput.value
     createList(value)
+    loadList(value);
+    displayWhichListIsLoaded(value)
     getLastLoadedListTitle()
     cleanupDisplayList()
+    sendUnhideThumbnailsMessage()
     // Send a message to the content script in the active tab
 
+  });
+}
+
+function sendUnhideThumbnailsMessage() {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, { action: "unhideThumbnails" }, function (response) {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError);
+        return;
+      }
+      console.log(response);
+    });
+    // Send a message to the content script in the active tab
   });
 }
 
@@ -258,7 +307,7 @@ function retrieveLists() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     retrieveListsFromStorage().then((list) => {
       var newArray = list.filter(function (item) {
-        return item !== "lastLoadedList" && item !== "lastLoadedListTitle" && item !== "fetchFromStorage2";
+        return item !== "lastLoadedList" && item !== "lastLoadedListTitle" && item !== "";
       });
       newArray.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
       displayFilterLists(newArray)
@@ -278,6 +327,7 @@ function deleteListButtonFunction() {
         }))
     displayWhichListIsLoaded("No List Loaded")
   });
+  sendUnhideThumbnailsMessage()
 }
 
 async function testButtonSendsMessage() {
@@ -337,10 +387,7 @@ function makeRefreshButtonFunction() {
     currentTabUrl = currentTab.url;
 
 
-    // const refreshButton = document.getElementById("refreshButton");
-    // refreshButton.addEventListener("click", function () {
-    //   refreshYoutube(currentTab.id);
-    // });
+
   });
 }
 
