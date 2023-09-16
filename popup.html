@@ -1,31 +1,54 @@
 <link href="popup.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 <script type="module" src="popup.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <div class="container">
-  <div>
+  <!-- Text Input and Submit Section -->
+  <div class="padding">
+    <div class="inputAndSubmit">
+      <input type="text" id="myInput" placeholder="Add a word to filter">
+      <button id="submitButton">Submit</button>
+    </div>
+
+    <!-- Toggle Switch Section -->
+
+
+
+    <!-- Filter Words List Section -->
+    <div>
+      <div id="listOfFilterWord">Current list</div>
+      <div class="Filter-Words" id="Filter Words"></div>
+    </div>
+
+    <!-- Import/Export Section -->
+    <div>
+      <button id="exportWords">Export Words</button>
+      <input type="file" id="importFile" accept=".json" />
+    </div>
+
+    <!-- Dynamic Dropdown and Filter List Management -->
+    <div>
+      <input type="text" id="filterListNameInput" placeholder="filter List Name">
+      <label for="dynamicDropdown">Choose an option:</label>
+      <select id="dynamicDropdown"></select>
+      <button id="createFilterListNameButton">Create</button>
+      <button id="DeleteFilterListNameButton">Delete</button>
+    </div>
+
+    <!-- Testing Button (if necessary) -->
+    <div>
+      <button id="TestingButton">Testing Button</button>
+    </div>
+
     <div id="title"></div>
-    <input type="text" id="myInput" placeholder="Enter text...">
-    <button id="submitButton">Submit</button>
-    <label class="switch">
-      <input type="checkbox" id="toggle">
-      <span class="slider"></span>
-    </label>
-    
-    <div id="listOfFilterWord">Current list</div>
-    <div class="Filter Words" id="Filter Words"></div>
-    <!-- <button id="refreshButton">Refresh</button> -->
-    <button id="exportWords">Export Words</button>
-    <input type="file" id="importFile" accept=".json" />
 
-    <input type="text" id="filterListNameInput" placeholder="filter List Name">
-    <label for="dynamicDropdown">Choose an option:</label>
-    <select id="dynamicDropdown"></select>
-
-    <button id="createFilterListNameButton">Create</button>
-
-    <button id="DeleteFilterListNameButton">Delete</button>
-    <button id="TestingButton">Testing Button</button>
-
+    <div class="switch-section">
+      <label class="switch">
+        <input type="checkbox" id="toggle">
+        <span class="slider round"></span> <!-- Updated here -->
+      </label>
+    </div>
 
   </div>
+
 </div>

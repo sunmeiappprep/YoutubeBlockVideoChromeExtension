@@ -1,15 +1,150 @@
-.container {
-  width: 280px;
-  color: #1479a1;
-  background-color: #e6f0ff; /* Change this to your desired blueish color */
-  padding: 20px;
-  height: 1000px;
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
 }
 
-.title {
-  font-size: 14px;
+
+.container {
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
+  /* background-color: #255461;
+  overflow: hidden; */
+}
+
+.padding {
+  padding: 4px;
+  margin: 4px;
+  background-color: black
+}
+
+
+/* Text Input and Submit Section */
+.inputAndSubmit {
+  display: flex;
+  align-items: center;
+}
+
+#myInput, #submitButton {
+  height: 40px;
+  padding: 10px;
+}
+
+#myInput {
+  flex: 1;
+  border: 3px solid black; /* Light gray border */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 5px;
+}
+
+#myInput:focus {
+  border-color: #ccc; /* Darker gray when focused */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1); /* Slight shadow for pop */
+}
+
+#submitButton {
+  background-color: red;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  border-radius: 5px;
+}
+
+#submitButton:hover {
+  background-color: darkred;
+  transform: scale(1.05);
+}
+
+
+#submitButton:hover {
+  background-color: darkred;
+  transform: scale(1.05);
+}
+
+
+
+/* Filter Words List Section */
+#listOfFilterWord {
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+#FilterWords {
+  margin-top: 10px;
+}
+
+/* Import/Export Section */
+#exportWords, #importFile {
+  margin-top: 20px;
+}
+
+/* Dynamic Dropdown and Filter List Management */
+.container div:nth-child(6) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#filterListNameInput, #dynamicDropdown, #createFilterListNameButton, #DeleteFilterListNameButton {
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+/* Testing Button */
+#TestingButton {
+  margin-top: 20px;
+}
+
+/* Title */
+#title {
+  font-size: 24px;
   font-weight: bold;
-  padding: 8px;
+  margin-top: 30px;
 }
 
 .textbox {
@@ -28,49 +163,34 @@
   display: none;
 }
 
-select {
-  width: 100%; /* Full width */
-  padding: 10px; /* Padding for appearance */
-  margin: 8px 0; /* Margin to separate from other elements */
-  box-sizing: border-box; /* Include padding and border in width */
-  border: 1px solid #ccc; /* Border color */
-  border-radius: 4px; /* Rounded corners */
-  appearance: none; /* Remove default appearance */
-  font-size: 16px; /* Font size */
-}
-
-option {
-  padding: 8px; /* Padding for each option */
-  font-size: 14px; /* Font size for options */
-  color: #333; /* Text color for options */
-}
-
-/* Style for the focused or active state of the select */
-select:focus {
-  border-color: #66afe9; /* Border color when focused */
-  outline: none; /* Remove default outline */
-}
 
 
+/*toggle*/
+
+/* Toggle Switch */
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
+  width: 80px;  /* Increased from 60px to 80px */
   height: 34px;
 }
 
-.switch input {
-  display: none;
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .slider {
   position: absolute;
+  cursor: pointer;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: #ccc;
-  transition: 0.4s;
+  transition: .4s;
+  background-color: blue;
 }
 
 .slider:before {
@@ -81,13 +201,57 @@ select:focus {
   left: 4px;
   bottom: 4px;
   background-color: white;
-  transition: 0.4s;
+  transition: .4s;
+  opacity: 0.5;
 }
 
 input:checked + .slider {
-  background-color: #2196F3;
+  background-color: red;
 }
 
 input:checked + .slider:before {
-  transform: translateX(26px);
+  transform: translateX(46px);  /* 80px (new width) - 26px (width of slider:before) - 2*4px (left and right padding) */
+}
+
+/* Round sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+
+.slider::after {
+  content: 'Full';
+  position: absolute;
+  top: 50%;
+  left: 10px; /* Adjust as needed */
+  transform: translateY(-50%);
+  font-size: 12px;
+}
+
+input:checked + .slider::after {
+  content: 'Partial';
+  right: 10px; /* Adjust as needed */
+  left: auto; /* Reset the left position */
+  transform: translateY(-50%);
+}
+
+/* Optional: To make the text more visible */
+.slider::after,
+input:checked + .slider::after {
+  color: white;
+  text-shadow: 0 0 5px black;
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+.Filter-Words{
+  font-family: 'Roboto', sans-serif;
+}
+
+.fas.fa-trash {
+  cursor: pointer;
 }

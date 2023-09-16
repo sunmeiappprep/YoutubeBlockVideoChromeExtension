@@ -43,17 +43,6 @@ function setupSubmitButton() {
     });
   }
 
-  // function submitActionIncludeInAny() {
-  //   const inputValue = inputElement.value;
-  //   // Send a message to contentScript.js with the input value
-  //   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-  //     getVariableFromChromeStorage("lastLoadedList").then((listName) => {
-  //     })
-  //     // console.log(response);
-  //       fetchAndDisplayFilterWords()
-  //   });
-  // }
-
   // Add the existing click listener to the submit button
   submitButton.addEventListener("click", submitAction);
   // submitButtonIncludeInAny.addEventListener("click", submitActionIncludeInAny);
@@ -91,49 +80,46 @@ function fetchAndDisplayFilterWords() {
 
 function displayObjectAsList(obj) {
   const container = document.getElementById("listOfFilterWord");
-
-  // Clear previous content
   container.innerHTML = "";
-
-  // Create an unordered list element
   const ul = document.createElement("ul");
 
-  // Loop through the object's keys and values to create list items
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       const li = document.createElement("li");
       li.textContent = key;
-  
-      // Get the value for the key
+
       const value = obj[key];
-  
-      // Check the value and change the color of the li accordingly
-      if (value === "matchPartial") { // Replace 'someCondition' with the condition you want to check for
+      if (value === "matchPartial") {
         li.style.color = "red";
       } else if (value === "anotherCondition") {
         li.style.color = "blue";
       }
-      // Create a button element
-      const button = document.createElement("button");
-      button.textContent = "Remove"; // You can set the button text to whatever you like
-  
-      // Optional: Add an event listener to the button
-      button.addEventListener("click", () => {
-        sendRemoveMessage(key)
+
+      // Create an icon element and set its class to Font Awesome's trash icon
+      const icon = document.createElement("i");
+      icon.className = "fas fa-trash";
+      icon.style.display = "none"; // Initially hide the icon
+
+      icon.addEventListener("click", () => {
+        sendRemoveMessage(key);
       });
-  
-      // Append the button to the list item
-      li.appendChild(button);
-  
-      // Append the list item to the unordered list
+
+      li.appendChild(icon);
+
+      li.addEventListener("mouseover", () => {
+        icon.style.display = "inline"; // Show the icon on hover
+      });
+      li.addEventListener("mouseout", () => {
+        icon.style.display = "none"; // Hide the icon when not hovering
+      });
+
       ul.appendChild(li);
     }
   }
-  
-
-  // Append the list to the container
   container.appendChild(ul);
 }
+
+
 
 function displayFilterLists(listKeysArray) {
   const dropdown = document.getElementById("dynamicDropdown");
