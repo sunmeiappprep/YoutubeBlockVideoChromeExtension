@@ -49,46 +49,56 @@ export function storeVariableInChromeStorage(variableName, value) {
   });
 }
 
-export function addKeyToFilterWordsFun(listName, value) {
-  getVariableFromChromeStorage([listName])
-    .then((result) => {
-      if (result) {
-        result[value] = true;
-        return result;
+export async function addKeyToFilterWordsFun(listName, value) {
+  try {
+    let result = await getVariableFromChromeStorage([listName]);
+
+    if (result) {
+      if (result[value]) {
+        await removeKeyFromFilterWords(listName, value);
+        console.log("addDeleteProc");
       }
-      return result; // Return the original result if value is not provided
-    })
-    .then((updatedResult) => {
-      storeVariableInChromeStorage([listName], updatedResult)
-    }).then(() => {
+
+      result[value] = true;
+
+      await storeVariableInChromeStorage([listName], result);
+
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, { action: "refresh" }, function (response) {
           // console.log(response);
         });
       });
-    });
-  // background.js
+    }
+  } catch (error) {
+    // handle error here
+    console.error(error);
+  }
 }
 
-export function addKeyToFilterWordsFunIncludeInAny(listName, value) {
-  getVariableFromChromeStorage([listName])
-    .then((result) => {
-      if (result) {
-        result[value] = "matchPartial";
-        return result;
+export async function addKeyToFilterWordsFunIncludeInAny(listName, value) {
+  try {
+    const result = await getVariableFromChromeStorage([listName]);
+
+    if (result) {
+      if (result[value]) {
+        await removeKeyFromFilterWords(listName, value);
+        console.log("addDeleteProc");
       }
-      return result; // Return the original result if value is not provided
-    })
-    .then((updatedResult) => {
-      storeVariableInChromeStorage([listName], updatedResult)
-    }).then(() => {
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "refresh" }, function (response) {
+
+      result[value] = "matchPartial";
+
+      await storeVariableInChromeStorage([listName], result);
+
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "refresh" }, (response) => {
           // console.log(response);
         });
       });
-    });
-  // background.js
+    }
+  } catch (error) {
+    // handle error here
+    console.error(error);
+  }
 }
 
 
@@ -133,22 +143,37 @@ export function deleteList(listName) {
   });
 }
 
-export function removeKeyFromFilterWords(listName, value, callback) {
-  getVariableFromChromeStorage(listName).then(result => {
-    if (result) {
-      delete result[value]
-      return result
-    }
-  })
-  .then(updateObject => storeVariableInChromeStorage(listName, updateObject))
-  .then(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "removeHiddenThumbnailsByFilterWord", value:value, listName:listName }, function (response) {
-        console.log(response);
+export function removeKeyFromFilterWords(listName, value) {
+  return new Promise((resolve, reject) => {
+    let stored;
+    getVariableFromChromeStorage(listName)
+      .then(result => {
+        if (result) {
+          stored = result[value];
+          delete result[value];
+          return result;
+        }
+      })
+      .then(updateObject => storeVariableInChromeStorage(listName, updateObject))
+      .then(() => {
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+          chrome.tabs.sendMessage(
+            tabs[0].id,
+            { action: "removeHiddenThumbnailsByFilterWord", value, listName: [listName], trueOrMatchPartial: stored },
+            function (response) {
+              console.log(response);
+              resolve(); // Resolve the promise here
+            }
+          );
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        reject(err); // Reject the promise if an error occurs
       });
-    });
-  })
+  });
 }
+
 
 
 export function importJSON(json, listName, callback) {

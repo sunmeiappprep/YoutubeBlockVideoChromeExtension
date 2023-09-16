@@ -29,28 +29,34 @@ function setupSubmitButton() {
     // Send a message to contentScript.js with the input value
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       getVariableFromChromeStorage("lastLoadedList").then((listName) => {
-        addKeyToFilterWordsFun(listName, inputValue)
+        getVariableFromChromeStorage("fullOrPartial").then(res =>{ 
+          if (res === "Full"){
+            addKeyToFilterWordsFun(listName, inputValue)
+          }
+          else(
+            addKeyToFilterWordsFunIncludeInAny(listName, inputValue)
+          )
+        })
       })
       // console.log(response);
         fetchAndDisplayFilterWords()
     });
   }
 
-  function submitActionIncludeInAny() {
-    const inputValue = inputElement.value;
-    // Send a message to contentScript.js with the input value
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      getVariableFromChromeStorage("lastLoadedList").then((listName) => {
-        addKeyToFilterWordsFunIncludeInAny(listName, inputValue)
-      })
-      // console.log(response);
-        fetchAndDisplayFilterWords()
-    });
-  }
+  // function submitActionIncludeInAny() {
+  //   const inputValue = inputElement.value;
+  //   // Send a message to contentScript.js with the input value
+  //   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+  //     getVariableFromChromeStorage("lastLoadedList").then((listName) => {
+  //     })
+  //     // console.log(response);
+  //       fetchAndDisplayFilterWords()
+  //   });
+  // }
 
   // Add the existing click listener to the submit button
   submitButton.addEventListener("click", submitAction);
-  submitButtonIncludeInAny.addEventListener("click", submitActionIncludeInAny);
+  // submitButtonIncludeInAny.addEventListener("click", submitActionIncludeInAny);
 
   // Add a keyup listener to the input element to listen for the Enter key
   inputElement.addEventListener("keyup", event => {
@@ -59,6 +65,21 @@ function setupSubmitButton() {
     }
   });
 }
+
+function createToggleForfullOrPartial () {
+    getVariableFromChromeStorage("fullOrPartial").then((partOrnot) => {
+      if (partOrnot === "Full"){
+        storeVariableInChromeStorage("fullOrPartial","Partial")
+        console.log("Partial")
+      }
+      else{
+        storeVariableInChromeStorage("fullOrPartial","Full")
+        console.log("Full")
+      }
+    })
+}
+
+
 
 
 function fetchAndDisplayFilterWords() {
@@ -82,24 +103,33 @@ function displayObjectAsList(obj) {
     if (obj.hasOwnProperty(key)) {
       const li = document.createElement("li");
       li.textContent = key;
-
+  
+      // Get the value for the key
+      const value = obj[key];
+  
+      // Check the value and change the color of the li accordingly
+      if (value === "matchPartial") { // Replace 'someCondition' with the condition you want to check for
+        li.style.color = "red";
+      } else if (value === "anotherCondition") {
+        li.style.color = "blue";
+      }
       // Create a button element
       const button = document.createElement("button");
       button.textContent = "Remove"; // You can set the button text to whatever you like
-
+  
       // Optional: Add an event listener to the button
       button.addEventListener("click", () => {
         sendRemoveMessage(key)
       });
-
+  
       // Append the button to the list item
       li.appendChild(button);
-
+  
       // Append the list item to the unordered list
       ul.appendChild(li);
     }
-
   }
+  
 
   // Append the list to the container
   container.appendChild(ul);
@@ -307,7 +337,8 @@ function retrieveLists() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     retrieveListsFromStorage().then((list) => {
       var newArray = list.filter(function (item) {
-        return item !== "lastLoadedList" && item !== "lastLoadedListTitle" && item !== "";
+        return item !== "lastLoadedList" && item !== "lastLoadedListTitle" 
+        && item !== "" && item !== "fullOrPartial";
       });
       newArray.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
       displayFilterLists(newArray)
@@ -395,7 +426,10 @@ let run = false
 
 async function runIfDOMIsLoaded() {
   const activeTab = await getActiveTabURL();
-
+  getVariableFromChromeStorage("fullOrPartial").then(res =>{ 
+    console.log(res)
+  })
+  
   if (activeTab && activeTab.url && activeTab.url.includes("youtube.com")) {
 
     try {
@@ -404,7 +438,10 @@ async function runIfDOMIsLoaded() {
       retrieveLists();
       setupDropdownChangeListener();
       makeRefreshButtonFunction();
+      createToggleForfullOrPartial () 
       document.getElementById('importFile').addEventListener('change', handleFileSelect);
+      document.getElementById("toggle").addEventListener("change", createToggleForfullOrPartial)
+      
     } catch {
 
     }
