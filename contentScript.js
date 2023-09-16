@@ -52,8 +52,9 @@ async function createList(value) {
 
 
 function createDefault() {
-    createList("lastLoadedList").then(() => storeVariableInChromeStorage("lastLoadedList", ""));
+    createList("fullOrPartial")
     createList("Default")
+    createList("lastLoadedList").then(() => storeVariableInChromeStorage("lastLoadedList", "Default"));
 }
 
 
@@ -120,19 +121,15 @@ async function removeHiddenThumbnails() {
 
 
 
-async function removeHiddenThumbnailsByFilterWord(filterWord,listName) {
+async function removeHiddenThumbnailsByFilterWord(filterWord,listName,trueOrMatchPartial) {
     console.log(listName,"listname");
     const titleArray = await getItemsfromDOM();
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let titleLink = titleArray[i][1];
-        let objectLastLoad = await getVariableFromChromeStorage([listName])
-        let objectLastLoad2 = await getVariableFromChromeStorage(listName)
-        console.log(objectLastLoad)
-        console.log(objectLastLoad2)
         if (titleLink) {
             let title = titleArray[i][1].getAttribute("title").toLowerCase();
-            if (shouldRemoveTitle(title, filterWord)) {
+            if (shouldRemoveTitle(title, {[filterWord]:trueOrMatchPartial})) {
                 ele.classList.remove('hidden');
             }
         }
@@ -200,7 +197,7 @@ function getWindowURL() {
 
 
 function handleMessage(message, sender, sendResponse) {
-    const { value, action, listName } = message;
+    const { value, action, listName,trueOrMatchPartial } = message;
     // console.log(message, sender, sendResponse)
     switch (action) {
         case "testButton":
@@ -227,8 +224,8 @@ function handleMessage(message, sender, sendResponse) {
             return true;  // Keeps the message channel open for asynchronous response
             break;
         case "removeHiddenThumbnailsByFilterWord":
-            console.log(value,listName,"removeHiddenThumbnailsByFilterWord")
-            removeHiddenThumbnailsByFilterWord(value,listName)
+            console.log(value,listName,"removeHiddenThumbnailsByFilterWord",trueOrMatchPartial)
+            removeHiddenThumbnailsByFilterWord(value,listName,trueOrMatchPartial)
             sendResponse({ response: "success" });
             return true;  // Keeps the message channel open for asynchronous response
         case "UnhideThumbnailAndRunEleBundle":
@@ -282,7 +279,7 @@ function mainProgram() {
         .then(value => {
             if (value === undefined) {
                 createDefault()
-                .then(() => storeVariableInChromeStorage("lastLoadedList", "Default"))
+        
                 console.log("The variable does not exist in storage.");
             } else {
                 console.log("The variable exists, and its value is:", value);
@@ -312,7 +309,7 @@ function mainProgram() {
 
 
 (() => {
-
+    storeVariableInChromeStorage("fullOrPartial","Full")
     mainProgram()
 
 
