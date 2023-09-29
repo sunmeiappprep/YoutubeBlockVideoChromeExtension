@@ -10,14 +10,7 @@ import { removeKeyFromFilterWords } from "./utils.js";
 import { importJSON } from "./utils.js";
 import { addKeyToFilterWordsFunIncludeInAny } from "./utils.js";
 
-
-
-// Get the HTML element by its id
-function displayWhichListIsLoaded(e) {
-  var outputElement = document.getElementById("title");
-  outputElement.textContent = ""
-  outputElement.textContent = e;
-}
+let toggleFullorPartial = "Full"
 
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
@@ -27,20 +20,20 @@ function setupSubmitButton() {
   function submitAction() {
     const inputValue = inputElement.value;
     // Send a message to contentScript.js with the input value
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      getVariableFromChromeStorage("lastLoadedList").then((listName) => {
-        getVariableFromChromeStorage("fullOrPartial").then(res =>{ 
-          if (res === "Full"){
-            addKeyToFilterWordsFun(listName, inputValue)
-          }
-          else(
-            addKeyToFilterWordsFunIncludeInAny(listName, inputValue)
-          )
+    if (inputValue !== ""){
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        getVariableFromChromeStorage("lastLoadedList").then((listName) => {
+            if (toggleFullorPartial === "Full"){
+              addKeyToFilterWordsFun(listName, inputValue)
+            }
+            else(
+              addKeyToFilterWordsFunIncludeInAny(listName, inputValue)
+            )
         })
-      })
-      // console.log(response);
-        fetchAndDisplayFilterWords()
-    });
+        // console.log(response);
+          fetchAndDisplayFilterWords()
+      });
+    }
   }
 
   // Add the existing click listener to the submit button
@@ -56,16 +49,14 @@ function setupSubmitButton() {
 }
 
 function createToggleForfullOrPartial () {
-    getVariableFromChromeStorage("fullOrPartial").then((partOrnot) => {
-      if (partOrnot === "Full"){
-        storeVariableInChromeStorage("fullOrPartial","Partial")
-        console.log("Partial")
-      }
-      else{
-        storeVariableInChromeStorage("fullOrPartial","Full")
-        console.log("Full")
-      }
-    })
+    if (toggleFullorPartial === "Full"){
+      toggleFullorPartial = "Partial"
+      console.log(toggleFullorPartial)
+    }
+    else{
+      toggleFullorPartial = "Full"
+      console.log(toggleFullorPartial)
+    }
 }
 
 
@@ -121,22 +112,28 @@ function displayObjectAsList(obj) {
 
 
 
-function displayFilterLists(listKeysArray) {
-  const dropdown = document.getElementById("dynamicDropdown");
+async function displayFilterLists(listKeysArray) {
 
-  const dummyOption = document.createElement("option");
-  dummyOption.value = "dummy"; // Set a value for the dummy option if needed
-  dummyOption.text = "Select an option"; // Text for the dummy option
-  dropdown.add(dummyOption);
+
+
+  const dropdown = document.getElementById("dynamicDropdown");
+  // const dummyOption = document.createElement("option");
+  
+  // dummyOption.value = "dummy"; // Set a value for the dummy option if needed
+  // dummyOption.text = "Load Option"; // Text for the dummy option
+  // dropdown.add(dummyOption);
 
   // Loop through the options and add them to the dropdown
   listKeysArray.forEach((optionText, index) => {
     const option = document.createElement("option");
     option.value = "option" + (index + 1); // or whatever value you want to associate with this option
     option.text = optionText;
+    getVariableFromChromeStorage("lastLoadedList").then(e => {
+      if (optionText === e) {
+        option.selected = true;
+      }
+    })
     dropdown.add(option);
-
-
   })
 
 
@@ -148,11 +145,11 @@ function deleteDisplayFilterList() {
 }
 
 
-function getLastLoadedListTitle() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    getVariableFromChromeStorage("lastLoadedList").then(e => displayWhichListIsLoaded(e))
-  });
-}
+// function getLastLoadedListTitle() {
+//   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+//     getVariableFromChromeStorage("lastLoadedList").then(e => displayWhichListIsLoaded(e))
+//   });
+// }
 
 
 
@@ -163,7 +160,7 @@ function setupDropdownChangeListener() {
   dropdown.addEventListener('change', function () {
     const selectedText = dropdown.selectedOptions[0].text;
     loadList(selectedText);
-    displayWhichListIsLoaded(selectedText)
+    // displayWhichListIsLoaded(selectedText)
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       if (tabs.length === 0) {
         console.error("No active tab found.");
@@ -277,8 +274,8 @@ function createListFun() {
     let value = filterListNameInput.value
     createList(value)
     loadList(value);
-    displayWhichListIsLoaded(value)
-    getLastLoadedListTitle()
+    // displayWhichListIsLoaded(value)
+    // getLastLoadedListTitle()
     cleanupDisplayList()
     sendUnhideThumbnailsMessage()
     // Send a message to the content script in the active tab
@@ -342,7 +339,7 @@ function deleteListButtonFunction() {
           let empty = {}
           displayObjectAsList(empty)
         }))
-    displayWhichListIsLoaded("No List Loaded")
+    // displayWhichListIsLoaded("No List Loaded")
   });
   sendUnhideThumbnailsMessage()
 }
@@ -412,19 +409,15 @@ let run = false
 
 async function runIfDOMIsLoaded() {
   const activeTab = await getActiveTabURL();
-  getVariableFromChromeStorage("fullOrPartial").then(res =>{ 
-    console.log(res)
-  })
   
   if (activeTab && activeTab.url && activeTab.url.includes("youtube.com")) {
 
     try {
-      getLastLoadedListTitle();
+      // getLastLoadedListTitle();
       initializePopup();
       retrieveLists();
       setupDropdownChangeListener();
       makeRefreshButtonFunction();
-      createToggleForfullOrPartial () 
       document.getElementById('importFile').addEventListener('change', handleFileSelect);
       document.getElementById("toggle").addEventListener("change", createToggleForfullOrPartial)
       

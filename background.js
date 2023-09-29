@@ -5,6 +5,7 @@ function injectContentScriptOnYouTubePages() {
       console.log("background.js")
       let tabId = details.tabId;
       injectScript(tabId);
+      
     }
   });
 
@@ -13,7 +14,7 @@ function injectContentScriptOnYouTubePages() {
       target: { tabId },
       files: ["contentScript.js"],
     })
-      .then(() => console.log("script injected", counter))
+      // .then(() => chrome.tabs.sendMessage(tabId, { action: "unhideThumbnails" }))
       .catch(err => console.log("Error injecting script:", err));
   }
 

@@ -15,39 +15,48 @@
 
 
     <!-- Filter Words List Section -->
-    <div>
-      <div id="listOfFilterWord">Current list</div>
+    <div class="Filter-WordsContainer">
+      <div id="listOfFilterWord"></div>
       <div class="Filter-Words" id="Filter Words"></div>
     </div>
 
     <!-- Import/Export Section -->
-    <div>
-      <button id="exportWords">Export Words</button>
-      <input type="file" id="importFile" accept=".json" />
+    <input type="text" id="filterListNameInput" placeholder="New List Name">
+    <label for="dynamicDropdown"></label>
+    <select id="dynamicDropdown"></select>
+    <!-- Dynamic Dropdown and Filter List Management -->
+    <div class="flexIntoRow">
+      <button id="createFilterListNameButton" class="shrinkable">
+        <i class="fas fa-plus"></i>
+      </button>
+      <button id="DeleteFilterListNameButton" class="shrinkable">
+        <i class="fas fa-trash"></i>
+      </button>
+      <button id="exportWords" class="shrinkable">
+        <i class="fas fa-download"></i>
+      </button>
+      <label for="importFile" class="file-upload-button shrinkable">
+        <i class="fas fa-upload"></i>
+      </label>
+      <input type="file" id="importFile" accept=".json" class="hidden-file-input" />
+      <button id="TestingButton" class="shrinkable">
+        <i class="fas fa-eye"></i>
+      </button>
+      <div class="switch-section">
+        <label class="switch">
+          <input type="checkbox" id="toggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
     </div>
 
-    <!-- Dynamic Dropdown and Filter List Management -->
-    <div>
-      <input type="text" id="filterListNameInput" placeholder="filter List Name">
-      <label for="dynamicDropdown">Choose an option:</label>
-      <select id="dynamicDropdown"></select>
-      <button id="createFilterListNameButton">Create</button>
-      <button id="DeleteFilterListNameButton">Delete</button>
-    </div>
+
 
     <!-- Testing Button (if necessary) -->
-    <div>
-      <button id="TestingButton">Testing Button</button>
-    </div>
-
     <div id="title"></div>
 
-    <div class="switch-section">
-      <label class="switch">
-        <input type="checkbox" id="toggle">
-        <span class="slider round"></span> <!-- Updated here -->
-      </label>
-    </div>
+
+
 
   </div>
 

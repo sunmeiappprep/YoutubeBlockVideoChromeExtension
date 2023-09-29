@@ -48,30 +48,53 @@ table {
 }
 
 
+
 .container {
-  width: 100%;
-  max-width: 600px;
-  box-sizing: border-box;
-  /* background-color: #255461;
-  overflow: hidden; */
+  /* max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem; */
+  max-width: 400px;
+  max-height: 200px;
+  background-color: #fff;
 }
 
 .padding {
-  padding: 4px;
-  margin: 4px;
-  background-color: black
+  padding: 1px;
+  margin: 1px;
+  border-radius: 25px;
 }
-
 
 /* Text Input and Submit Section */
 .inputAndSubmit {
   display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
 #myInput, #submitButton {
   height: 40px;
   padding: 10px;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+.switch .slider {
+  background-color: #e74c3c;
+}
+
+.switch .slider:before {
+  background-color: #3498db;
 }
 
 #myInput {
@@ -111,40 +134,36 @@ table {
 /* Filter Words List Section */
 #listOfFilterWord {
   font-size: 18px;
-  margin-top: 20px;
+  padding: 10px;
 }
+
+
 
 #FilterWords {
   margin-top: 10px;
 }
 
 /* Import/Export Section */
-#exportWords, #importFile {
-  margin-top: 20px;
-}
+
 
 /* Dynamic Dropdown and Filter List Management */
-.container div:nth-child(6) {
+/* .container div:nth-child(6) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-}
+} */
 
-#filterListNameInput, #dynamicDropdown, #createFilterListNameButton, #DeleteFilterListNameButton {
+#filterListNameInput, #dynamicDropdown{
   margin-top: 10px;
   margin-right: 10px;
 }
 
 /* Testing Button */
-#TestingButton {
-  margin-top: 20px;
-}
 
 /* Title */
 #title {
   font-size: 24px;
   font-weight: bold;
-  margin-top: 30px;
 }
 
 .textbox {
@@ -248,10 +267,61 @@ input:checked + .slider::after {
 
 
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-.Filter-Words{
-  font-family: 'Roboto', sans-serif;
-}
 
 .fas.fa-trash {
   cursor: pointer;
+}
+
+
+.Filter-WordsContainer {
+  margin-top: 10px;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  overflow-y: scroll;
+}
+
+.Filter-Words {
+  margin-top: 1rem;
+}
+
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+/* import */
+
+.file-upload-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.file-upload-button:hover {
+  background-color: #2980b9; /* Darkened version for hover effect */
+}
+
+.flexIntoRow {
+  display: flex;           /* Set up the flexbox container */
+  align-items: center;     /* Align items vertically in the center */
+  justify-content: start;  /* Align items to the start/left side of the container */
+  gap: 10px;               /* Space between items */
+  overflow: hidden;        /* Ensure no wrapping occurs */
+}
+
+.shrinkable i {
+  font-size: 20px;       /* Adjust the icon size */
+  vertical-align: middle; /* Align the icon to the middle of the button */
 }
