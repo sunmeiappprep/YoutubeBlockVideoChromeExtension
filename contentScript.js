@@ -121,15 +121,15 @@ async function removeHiddenThumbnails() {
 
 
 
-async function removeHiddenThumbnailsByFilterWord(filterWord,listName,trueOrMatchPartial) {
-    console.log(listName,"listname");
+async function removeHiddenThumbnailsByFilterWord(filterWord, listName, trueOrMatchPartial) {
+    console.log(listName, "listname");
     const titleArray = await getItemsfromDOM();
     for (let i = 0; i < titleArray.length; i++) {
         let ele = titleArray[i][0];
         let titleLink = titleArray[i][1];
         if (titleLink) {
             let title = titleArray[i][1].getAttribute("title").toLowerCase();
-            if (shouldRemoveTitle(title, {[filterWord]:trueOrMatchPartial})) {
+            if (shouldRemoveTitle(title, { [filterWord]: trueOrMatchPartial })) {
                 ele.classList.remove('hidden');
             }
         }
@@ -154,16 +154,16 @@ function shouldRemoveTitle(title, filterWords) {
 
     Object.keys(filterWords).forEach(key => {
         if (filterWords[key] === true) {
-          trueKeys.push(key.toLowerCase());
+            trueKeys.push(key.toLowerCase());
         } else if (filterWords[key] === "matchPartial") {
-          matchPartialKeys.push(key.toLowerCase());
+            matchPartialKeys.push(key.toLowerCase());
         }
-      });
+    });
 
 
     if (trueKeys.some(word => lowerCaseTitle.includes(word))) {
         title = cleanString(title)
-        console.log(title)
+        // console.log(title)
         let lowerCaseTitlesplit = title.split(" ")
         return trueKeys.some(word => lowerCaseTitlesplit.includes(word))
     };
@@ -178,7 +178,7 @@ function shouldRemoveTitle(title, filterWords) {
 
 function cleanString(str) {
     return str.replace(/[^\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af\u0410-\u044F\u0391-\u03CE\u0600-\u06FF\u0900-\u097F\u00C0-\u00FFa-zA-Z0-9 ]/g, " ").trim();
-  }
+}
 
 async function removeEleBundle() {
     // console.log("removeEleBundle is running")
@@ -197,7 +197,7 @@ function getWindowURL() {
 
 
 function handleMessage(message, sender, sendResponse) {
-    const { value, action, listName,trueOrMatchPartial } = message;
+    const { value, action, listName, trueOrMatchPartial } = message;
     // console.log(message, sender, sendResponse)
     switch (action) {
         case "testButton":
@@ -214,6 +214,7 @@ function handleMessage(message, sender, sendResponse) {
             return true;  // Keeps the message channel open for asynchronous response
             break;
         case "unhideThumbnails":
+            console.log("unhideThumbnails")
             removeHiddenThumbnails()
             sendResponse({ response: "success" });
             return true;  // Keeps the message channel open for asynchronous response
@@ -224,15 +225,15 @@ function handleMessage(message, sender, sendResponse) {
             return true;  // Keeps the message channel open for asynchronous response
             break;
         case "removeHiddenThumbnailsByFilterWord":
-            console.log(value,listName,"removeHiddenThumbnailsByFilterWord",trueOrMatchPartial)
-            removeHiddenThumbnailsByFilterWord(value,listName,trueOrMatchPartial)
+            console.log(value, listName, "removeHiddenThumbnailsByFilterWord", trueOrMatchPartial)
+            removeHiddenThumbnailsByFilterWord(value, listName, trueOrMatchPartial)
             sendResponse({ response: "success" });
             return true;  // Keeps the message channel open for asynchronous response
         case "UnhideThumbnailAndRunEleBundle":
             console.log("UnhideThumbnailAndRunEleBundle")
             removeHiddenThumbnails().then(() => setTimeout(() => {
                 removeEleBundle();
-              }, 1000));
+            }, 1000));
             sendResponse({ response: "success" });
             return true;  // Keeps the message channel open for asynchronous response
         default:
@@ -256,30 +257,27 @@ function throttle(func, limit) {
 
 
 function checkIfBottomReachedAndExecuteScroll() {
-    if (isBottomReached()) {
         removeEleBundle();
-    }
 }
 
 
 function CheckIfBottomReachedAndExecuteKey(event) {
     // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
-    if ((event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) &&
-        isBottomReached()) {
+    if (event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) {
         removeEleBundle();
     }
 }
 
 
-var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 100);
-var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 100);
+var throttledCheckIfBottomReachedAndExecuteScroll = throttle(checkIfBottomReachedAndExecuteScroll, 50);
+var throttledCheckIfBottomReachedAndExecuteKey = throttle(CheckIfBottomReachedAndExecuteKey, 50);
 
 function mainProgram() {
     getVariableFromChromeStorage("lastLoadedList")
         .then(value => {
             if (value === undefined) {
                 createDefault()
-        
+
                 console.log("The variable does not exist in storage.");
             } else {
                 console.log("The variable exists, and its value is:", value);
@@ -295,7 +293,7 @@ function mainProgram() {
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
     window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
 
-
+    
     // Timeout to remove elements
     let count = 0;
     const intervalId = setInterval(() => {
@@ -305,14 +303,19 @@ function mainProgram() {
             clearInterval(intervalId);
         }
     }, 250);
+
+    let currentWindow = getWindowURL()
+    if (currentWindow.includes("watch")){
+        console.log("included watch")
+        removeHiddenThumbnails()
+    }
 }
 
 
 (() => {
-    storeVariableInChromeStorage("fullOrPartial","Full")
+    storeVariableInChromeStorage("fullOrPartial", "Full")
     mainProgram()
-
-
+    
 })()
 
 
