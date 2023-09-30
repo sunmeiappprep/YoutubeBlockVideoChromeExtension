@@ -15,26 +15,23 @@ let toggleFullorPartial = "Full"
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
   const submitButton = document.getElementById("submitButton");
-  const submitButtonIncludeInAny = document.getElementById("submitButtonIncludeInAny");
 
-  function submitAction() {
+  async function submitAction() {
     const inputValue = inputElement.value;
-    // Send a message to contentScript.js with the input value
-    if (inputValue !== ""){
-      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-        getVariableFromChromeStorage("lastLoadedList").then((listName) => {
-            if (toggleFullorPartial === "Full"){
-              addKeyToFilterWordsFun(listName, inputValue)
-            }
-            else(
-              addKeyToFilterWordsFunIncludeInAny(listName, inputValue)
-            )
-        })
-        // console.log(response);
-          fetchAndDisplayFilterWords()
+    if (inputValue !== "") {
+      chrome.tabs.query({ active: true, currentWindow: true }, async tabs => {
+        const listName = await getVariableFromChromeStorage("lastLoadedList");
+        if (toggleFullorPartial === "Full") {
+          await addKeyToFilterWordsFun(listName, inputValue);
+          fetchAndDisplayFilterWords();
+        } else {
+          await addKeyToFilterWordsFunIncludeInAny(listName, inputValue);
+          fetchAndDisplayFilterWords();
+        }
       });
     }
   }
+  
 
   // Add the existing click listener to the submit button
   submitButton.addEventListener("click", submitAction);
