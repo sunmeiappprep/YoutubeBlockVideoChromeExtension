@@ -160,6 +160,11 @@ function shouldRemoveTitle(title, filterWords) {
         }
     });
 
+    console.log(matchPartialKeys,lowerCaseTitle)
+
+    if (matchPartialKeys.some(word => lowerCaseTitle.includes(word))) {
+        return true
+    };
 
     if (trueKeys.some(word => lowerCaseTitle.includes(word))) {
         title = cleanString(title)
@@ -168,9 +173,9 @@ function shouldRemoveTitle(title, filterWords) {
         return trueKeys.some(word => lowerCaseTitlesplit.includes(word))
     };
 
-    if (matchPartialKeys.some(word => lowerCaseTitle.includes(word))) {
-        return matchPartialKeys.some(word => lowerCaseTitle.includes(word))
-    };
+    
+
+
 
     return false
 }
@@ -186,6 +191,9 @@ async function removeEleBundle() {
         const titleArray = await getItemsfromDOM();
         removeEle(titleArray);
         console.log("remove")
+    }
+    else if (getWindowURL().includes("watch")){
+        
     }
 
 }
@@ -292,7 +300,9 @@ function mainProgram() {
     // Event Listeners
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
     window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
-
+    
+    
+    removeEleBundle();
     
     // Timeout to remove elements
     let count = 0;
@@ -304,16 +314,16 @@ function mainProgram() {
         }
     }, 250);
 
-    let currentWindow = getWindowURL()
-    if (currentWindow.includes("watch")){
-        console.log("included watch")
-        removeHiddenThumbnails()
-    }
+    // let currentWindow = getWindowURL()
+    // if (currentWindow.includes("watch")){
+    //     console.log("included watch")
+    //     removeHiddenThumbnails()
+    // }
 }
 
 
 (() => {
-    storeVariableInChromeStorage("fullOrPartial", "Full")
+    // storeVariableInChromeStorage("fullOrPartial", "Full")
     mainProgram()
     
 })()

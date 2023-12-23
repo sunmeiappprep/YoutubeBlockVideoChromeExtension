@@ -14,7 +14,7 @@ let toggleFullorPartial = "Full"
 
 function setupSubmitButton() {
   const inputElement = document.getElementById("myInput");
-  const submitButton = document.getElementById("submitButton");
+  // const submitButton = document.getElementById("submitButton");
 
   async function submitAction() {
     const inputValue = inputElement.value;
@@ -30,11 +30,12 @@ function setupSubmitButton() {
         }
       });
     }
+    inputElement.value = ""
   }
   
 
   // Add the existing click listener to the submit button
-  submitButton.addEventListener("click", submitAction);
+  // submitButton.addEventListener("click", submitAction);
   // submitButtonIncludeInAny.addEventListener("click", submitActionIncludeInAny);
 
   // Add a keyup listener to the input element to listen for the Enter key
@@ -276,8 +277,11 @@ function createListFun() {
     cleanupDisplayList()
     sendUnhideThumbnailsMessage()
     // Send a message to the content script in the active tab
-
+    setTimeout(() => {
+      filterListNameInput.value = ""
+    }, 100);
   });
+
 }
 
 function sendUnhideThumbnailsMessage() {
@@ -329,17 +333,25 @@ function retrieveLists() {
 function deleteListButtonFunction() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     getVariableFromChromeStorage("lastLoadedList")
-      .then(listName => deleteList(listName)
-        .then(() => retrieveLists())
-        .then(() => cleanupDisplayList())
-        .then(() => {
-          let empty = {}
-          displayObjectAsList(empty)
-        }))
-    // displayWhichListIsLoaded("No List Loaded")
+      .then(listName => {
+        if (listName !== "Default") {
+          deleteList(listName)
+            .then(() => retrieveLists())
+            .then(() => cleanupDisplayList())
+            .then(() => {
+              loadList("Default")
+            });
+        sendUnhideThumbnailsMessage();
+
+          // If you want to display a message when the list is not default, you can do it here
+        } else {
+          // Optional: handle the case when the list is "Default" (e.g., show a message)
+          console.log("Cannot delete the 'Default' list.");
+        }
+      });
   });
-  sendUnhideThumbnailsMessage()
 }
+
 
 async function testButtonSendsMessage() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -417,6 +429,12 @@ async function runIfDOMIsLoaded() {
       makeRefreshButtonFunction();
       document.getElementById('importFile').addEventListener('change', handleFileSelect);
       document.getElementById("toggle").addEventListener("change", createToggleForfullOrPartial)
+      document.getElementById("filterListNameInput").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          createListFun();
+        }
+      });
+    
       
     } catch {
 
