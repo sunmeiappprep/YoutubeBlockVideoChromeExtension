@@ -7,7 +7,17 @@
   <div class="padding">
     <div class="inputAndSubmit">
       <input type="text" id="myInput" placeholder="Add a word to filter">
-      <button id="submitButton">Submit</button>
+      <!-- <button id="submitButton"></button> -->
+      <div class="toggleContainer">
+        <label class="toggle" id="toggle">
+          <input type="checkbox">
+          <span class="slider"></span>
+          <span class="labels" data-on="Partial" data-off="Full"></span>
+        </label>
+      </div>
+
+
+
     </div>
 
     <!-- Toggle Switch Section -->
@@ -26,28 +36,23 @@
     <select id="dynamicDropdown"></select>
     <!-- Dynamic Dropdown and Filter List Management -->
     <div class="flexIntoRow">
-      <button id="createFilterListNameButton" class="shrinkable">
+      <button id="createFilterListNameButton" class="shrinkable" title="Add List">
         <i class="fas fa-plus"></i>
       </button>
-      <button id="DeleteFilterListNameButton" class="shrinkable">
+      <button id="DeleteFilterListNameButton" class="shrinkable" title="Delete List">
         <i class="fas fa-trash"></i>
       </button>
-      <button id="exportWords" class="shrinkable">
+      <button id="exportWords" class="shrinkable" title="Download List to JSON file">
         <i class="fas fa-download"></i>
       </button>
-      <label for="importFile" class="file-upload-button shrinkable">
+      <label for="importFile" class="file-upload-button shrinkable" title="Upload JSON File to current list">
         <i class="fas fa-upload"></i>
       </label>
       <input type="file" id="importFile" accept=".json" class="hidden-file-input" />
-      <button id="TestingButton" class="shrinkable">
+      <button id="TestingButton" class="shrinkable" title="Unhide Everything">
         <i class="fas fa-eye"></i>
       </button>
-      <div class="switch-section">
-        <label class="switch">
-          <input type="checkbox" id="toggle">
-          <span class="slider round"></span>
-        </label>
-      </div>
+
     </div>
 
 

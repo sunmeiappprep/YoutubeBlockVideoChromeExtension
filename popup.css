@@ -66,14 +66,14 @@ table {
 
 /* Text Input and Submit Section */
 .inputAndSubmit {
+  padding: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 #myInput, #submitButton {
-  height: 40px;
-  padding: 10px;
+  height: 30px;
 }
 
 button {
@@ -89,13 +89,7 @@ button:hover {
   background-color: #2980b9;
 }
 
-.switch .slider {
-  background-color: #e74c3c;
-}
 
-.switch .slider:before {
-  background-color: #3498db;
-}
 
 #myInput {
   flex: 1;
@@ -182,87 +176,99 @@ button:hover {
   display: none;
 }
 
+.toggleContainer{
+  padding: 5px;
+}
 
+.toggle {
+  --width: 80px;
+  --height: calc(var(--width) / 3);
 
-/*toggle*/
-
-/* Toggle Switch */
-.switch {
   position: relative;
   display: inline-block;
-  width: 80px;  /* Increased from 60px to 80px */
-  height: 34px;
-}
-
-.switch input { 
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
+  width: var(--width);
+  height: var(--height);
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
+  border-radius: var(--height);
   cursor: pointer;
+}
+
+.toggle input {
+  display: none;
+}
+
+.toggle .slider {
+  position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
+  /* border-radius: var(--height); */
   background-color: #ccc;
-  transition: .4s;
-  background-color: blue;
+  transition: all 0.4s ease-in-out;
 }
 
-.slider:before {
-  position: absolute;
+.toggle .slider::before {
   content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: .4s;
-  opacity: 0.5;
-}
-
-input:checked + .slider {
-  background-color: red;
-}
-
-input:checked + .slider:before {
-  transform: translateX(46px);  /* 80px (new width) - 26px (width of slider:before) - 2*4px (left and right padding) */
-}
-
-/* Round sliders */
-.slider.round {
-  border-radius: 34px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
-}
-
-
-.slider::after {
-  content: 'Full';
   position: absolute;
-  top: 50%;
-  left: 10px; /* Adjust as needed */
-  transform: translateY(-50%);
+  top: 0;
+  left: 0;
+  width: calc(var(--height));
+  height: calc(var(--height));
+  /* border-radius: calc(var(--height) / 2); */
+  background-color: #fff;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s ease-in-out;
+}
+
+.toggle input:checked+.slider {
+  background-color: #e52e2e;
+}
+
+.toggle input:checked+.slider::before {
+  transform: translateX(calc(var(--width) - var(--height)));
+}
+
+.toggle .labels {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 100%;
+  height: 100%;
   font-size: 12px;
+  font-family: sans-serif;
+  transition: all 0.4s ease-in-out;
+  overflow: hidden;
 }
 
-input:checked + .slider::after {
-  content: 'Partial';
-  right: 10px; /* Adjust as needed */
-  left: auto; /* Reset the left position */
-  transform: translateY(-50%);
+.toggle .labels::after {
+  content: attr(data-off);
+  position: absolute;
+  right: 5px;
+  color: #4d4d4d;
+  opacity: 1;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s ease-in-out;
 }
 
-/* Optional: To make the text more visible */
-.slider::after,
-input:checked + .slider::after {
-  color: white;
-  text-shadow: 0 0 5px black;
+.toggle .labels::before {
+  content: attr(data-on);
+  position: absolute;
+  left: calc(var(--height) - var(--width) + 2px);
+  color: #ffffff;
+  opacity: 0;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.4);
+  transition: all 0.4s ease-in-out;
+}
+
+.toggle input:checked~.labels::after {
+  opacity: 0;
+  transform: translateX(calc(var(--width) - var(--height)));
+}
+
+.toggle input:checked~.labels::before {
+  opacity: 1;
+  transform: translateX(calc(var(--width) - var(--height)));
 }
 
 
@@ -278,7 +284,7 @@ input:checked + .slider::after {
   padding: 1rem;
   border: 1px solid #ddd;
   background-color: #f9f9f9;
-  overflow-y: scroll;
+  overflow-y: hidden;
 }
 
 .Filter-Words {
