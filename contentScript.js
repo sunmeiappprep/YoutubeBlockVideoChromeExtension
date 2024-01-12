@@ -160,7 +160,6 @@ function shouldRemoveTitle(title, filterWords) {
         }
     });
 
-    console.log(matchPartialKeys,lowerCaseTitle)
 
     if (matchPartialKeys.some(word => lowerCaseTitle.includes(word))) {
         return true
@@ -187,13 +186,14 @@ function cleanString(str) {
 
 async function removeEleBundle() {
     // console.log("removeEleBundle is running")
+    // console.log(getWindowURL())
     if (getWindowURL() === "https://www.youtube.com/" || getWindowURL().includes("youtube.com/?bp=")) {
         const titleArray = await getItemsfromDOM();
         removeEle(titleArray);
-        console.log("remove")
+        // console.log("remove")
     }
     else if (getWindowURL().includes("watch")){
-        
+
     }
 
 }
@@ -265,14 +265,65 @@ function throttle(func, limit) {
 
 
 function checkIfBottomReachedAndExecuteScroll() {
+    if(getWindowURL() === "https://www.youtube.com/"){
         removeEleBundle();
+    }
+    else {
+        // console.log("not youtube")
+    }
+    
 }
 
 
 function CheckIfBottomReachedAndExecuteKey(event) {
     // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
-    if (event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) {
-        removeEleBundle();
+    if(getWindowURL() === "https://www.youtube.com/"){
+        if (event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) {
+            removeEleBundle();
+        }
+    }
+    else {
+        // console.log("not youtube")
+    }
+
+}
+
+function onClickCheckIfItIsYoutubeHomePage(event) {
+    // console.log("asd?")
+    // console.log(event)
+    // if (console.log(event.target.baseURI) !== "https://www.youtube.com/"){
+    //     removeHiddenThumbnails()
+    //     // console.log("clearing")
+    // }
+    var element = event.target;
+    
+    // Traverse up the DOM to find if the clicked element is inside an <a> tag
+    while (element && element.nodeName !== "A") {
+        element = element.parentNode;
+    }
+
+    // if (element && element.href && element.href !=="https://www.youtube.com/") {
+    //     // This is a click inside an <a> tag with an href attribute
+    //     console.log("Redirecting to:", element.href);
+    //         removeHiddenThumbnails()
+    //         console.log("clearing")
+    //     // For example, you can check if it's a YouTube link, log data, etc.
+    // }
+    if (element && element.href && element.href ==="https://www.youtube.com/") {
+        // This is a click inside an <a> tag with an href attribute
+        console.log("Redirecting to:", element.href);
+        var myInterval = setInterval(() => {
+            removeHiddenThumbnails();
+        }, 500);
+        
+        setTimeout(() => {
+            clearInterval(myInterval);
+            removeEleBundle();
+        }, 2000); // Clears the interval after 10 seconds
+        
+        
+            console.log("clearing")
+        // For example, you can check if it's a YouTube link, log data, etc.
     }
 }
 
@@ -300,6 +351,9 @@ function mainProgram() {
     // Event Listeners
     window.addEventListener('scroll', throttledCheckIfBottomReachedAndExecuteScroll);
     window.addEventListener('keydown', throttledCheckIfBottomReachedAndExecuteKey);
+    window.addEventListener("click", onClickCheckIfItIsYoutubeHomePage, true);
+
+
     
     
     removeEleBundle();
@@ -326,6 +380,9 @@ function mainProgram() {
     // storeVariableInChromeStorage("fullOrPartial", "Full")
     mainProgram()
     
+
+
+
 })()
 
 
