@@ -270,16 +270,18 @@ function createListFun() {
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const activeTab = tabs[0];
     let value = filterListNameInput.value
-    createList(value)
-    loadList(value);
-    // displayWhichListIsLoaded(value)
-    // getLastLoadedListTitle()
-    cleanupDisplayList()
-    sendUnhideThumbnailsMessage()
-    // Send a message to the content script in the active tab
-    setTimeout(() => {
-      filterListNameInput.value = ""
-    }, 100);
+    if (value){
+      createList(value)
+      loadList(value);
+      // displayWhichListIsLoaded(value)
+      // getLastLoadedListTitle()
+      cleanupDisplayList()
+      sendUnhideThumbnailsMessage()
+      // Send a message to the content script in the active tab
+      setTimeout(() => {
+        filterListNameInput.value = ""
+      }, 100);
+    }
   });
 
 }
@@ -442,7 +444,16 @@ async function runIfDOMIsLoaded() {
 
   } else {
     const container = document.getElementsByClassName("container")[0];
-    container.innerHTML = '<div class="title">This is not a youtube video page.</div>';
+    container.style.width = '90%';
+    container.style.padding = '20px';
+    container.style.boxSizing = 'border-box';
+    container.style.minWidth = '300px';
+    container.innerHTML = '<div class="title">This is not a YouTube video page.</div>';
+    const titleDiv = container.querySelector('.title');
+    titleDiv.style.color = 'red';
+    titleDiv.style.fontSize = '20px';
+    titleDiv.style.textAlign = 'center';
+    
   }
 }
 

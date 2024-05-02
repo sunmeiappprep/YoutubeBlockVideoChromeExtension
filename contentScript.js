@@ -265,7 +265,7 @@ function throttle(func, limit) {
 
 
 function checkIfBottomReachedAndExecuteScroll() {
-    if(getWindowURL() === "https://www.youtube.com/"){
+    if (getWindowURL() === "https://www.youtube.com/" || getWindowURL().includes("youtube.com/?bp=")) {
         removeEleBundle();
     }
     else {
@@ -277,7 +277,7 @@ function checkIfBottomReachedAndExecuteScroll() {
 
 function CheckIfBottomReachedAndExecuteKey(event) {
     // Check if the key pressed is the down arrow (key code 40), End key (key code 35), or Page Down key (key code 34)
-    if(getWindowURL() === "https://www.youtube.com/"){
+    if (getWindowURL() === "https://www.youtube.com/" || getWindowURL().includes("youtube.com/?bp=")) {
         if (event.keyCode === 40 || event.keyCode === 35 || event.keyCode === 34) {
             removeEleBundle();
         }
@@ -289,42 +289,28 @@ function CheckIfBottomReachedAndExecuteKey(event) {
 }
 
 function onClickCheckIfItIsYoutubeHomePage(event) {
-    // console.log("asd?")
-    // console.log(event)
-    // if (console.log(event.target.baseURI) !== "https://www.youtube.com/"){
-    //     removeHiddenThumbnails()
-    //     // console.log("clearing")
-    // }
+
     var element = event.target;
     
-    // Traverse up the DOM to find if the clicked element is inside an <a> tag
     while (element && element.nodeName !== "A") {
         element = element.parentNode;
     }
-
-    // if (element && element.href && element.href !=="https://www.youtube.com/") {
-    //     // This is a click inside an <a> tag with an href attribute
-    //     console.log("Redirecting to:", element.href);
-    //         removeHiddenThumbnails()
-    //         console.log("clearing")
-    //     // For example, you can check if it's a YouTube link, log data, etc.
-    // }
-    if (element && element.href && element.href ==="https://www.youtube.com/") {
-        // This is a click inside an <a> tag with an href attribute
-        console.log("Redirecting to:", element.href);
-        var myInterval = setInterval(() => {
-            removeHiddenThumbnails();
-        }, 500);
-        
-        setTimeout(() => {
-            clearInterval(myInterval);
-            removeEleBundle();
-        }, 2000); // Clears the interval after 10 seconds
-        
-        
-            console.log("clearing")
-        // For example, you can check if it's a YouTube link, log data, etc.
+    if (element && element.href){
+        if (element.href ==="https://www.youtube.com/" || element.href.includes("youtube.com/?bp=")) {
+            // This is a click inside an <a> tag with an href attribute
+            console.log("Redirecting to:", element.href);
+            var myInterval = setInterval(() => {
+                removeHiddenThumbnails();
+            }, 500);
+            
+            setTimeout(() => {
+                clearInterval(myInterval);
+                removeEleBundle();
+            }, 2000); 
+            
+        }
     }
+
 }
 
 

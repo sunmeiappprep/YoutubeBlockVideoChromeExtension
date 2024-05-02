@@ -15,9 +15,9 @@
     ],
     "action": {
       "default_icon": {
-        "16": "assets/ext-icon.png",
-        "24": "assets/ext-icon.png",
-        "32": "assets/ext-icon.png"
+        "16": "assets/stop.png",
+        "24": "assets/stop.png",
+        "32": "assets/stop.png"
       },
       "default_title": "Youtube Filter Homepage Videos",
       "default_popup": "popup.html"
